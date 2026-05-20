@@ -1,0 +1,219 @@
+.login-page {
+  background-color: #eef2f7;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Roboto', sans-serif;
+  padding: 0px 0px;
+}
+
+.login-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 900px;
+  min-height: auto;
+  border-radius: 28px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.05);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+}
+
+/* --- Left Form Architecture --- */
+.login-form-area {
+  padding: 20px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.form-container {
+  max-width: 380px;
+  width: 100%;
+  margin: 40px 0;
+}
+
+.form-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1a1b26;
+  margin-bottom: 8px;
+}
+
+.form-subtitle {
+  color: #666;
+  font-size: 15px;
+  margin-bottom: 40px;
+}
+
+/* Input Fields styling */
+.input-group {
+  margin-bottom: 24px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1b26;
+  margin-bottom: 8px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 16px;
+  border: 1.5px solid #eaeaea;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #1a1b26;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+  outline: none;
+  background-color: #fff;
+  border-color: #007a3f;
+  box-shadow: 0 0 0 4px rgba(124, 77, 255, 0.1);
+}
+
+/* Interaction Controls */
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  background-color: #007a3f; /* Signature Purple Accent */
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: background 0.2s ease;
+
+}
+
+.btn-primary:hover {
+  background-color: #019c51;
+}
+
+.btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background-color: #f1f3f9;
+  color: #1a1b26;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  box-sizing: border-box;
+  transition: background 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #e4e8f2;
+}
+
+.form-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* --- Right Visual Side Panel --- */
+.login-visual-area {
+  background-color: #f3f4f9;
+  display: flex;
+  align-items: flex-end; /* Aligns the image container to the absolute bottom */
+  justify-content: center;
+  border-radius: 24px;
+  margin: 16px;
+
+  /* Remove or set bottom padding to 0 so the image can touch the edge */
+  padding: 40px 40px 0px 40px;
+}
+
+.panel-artwork {
+  max-width: 150%;
+  max-height: 1000px;
+  object-fit: contain;
+  display: block; /* Removes default inline image spacing at the bottom */
+  margin-bottom: 0;
+}
+
+/* --- Premium Mobile UI Re-design --- */
+@media (max-width: 768px) {
+  .login-page {
+    background-color: #f8fafc; /* Crisp, clean off-white background */
+    padding: 16px;
+    align-items: center;
+  }
+
+  .login-card {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    border-radius: 24px;
+    box-shadow: 0 12px 34px rgba(26, 27, 38, 0.04); /* Soft modern shadow */
+    border: 1px solid rgba(234, 234, 234, 0.6);
+  }
+
+  .login-form-area {
+    padding: 36px 24px; /* Perfectly proportioned padding for mobile frames */
+    gap: 32px;
+  }
+
+  /* Completely hides the visual illustration column on mobile viewports */
+  .login-visual-area {
+    display: none;
+  }
+
+  .form-container {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .form-title {
+    font-size: 26px; /* Optimized typography scale for mobile displays */
+    letter-spacing: -0.5px;
+  }
+
+  .form-subtitle {
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  /* Mobile Touch Targets Optimization */
+  .input-group {
+    margin-bottom: 20px;
+  }
+
+  .input-group input {
+    padding: 14px 16px; /* Slightly shorter input height for dense mobile screens */
+    font-size: 16px; /* Prevents iOS Safari from auto-zooming when focused */
+    border-radius: 12px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 15px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  .btn-primary {
+    margin-bottom: 12px;
+  }
+
+  .form-footer {
+    justify-content: center; /* Centers the support link cleanly at the bottom */
+    margin-top: 10px;
+  }
+}

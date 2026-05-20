@@ -1,0 +1,222 @@
+/* Fixed Base Shell Layout Container */
+.sidebar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background-color: #111214;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  z-index: 1000;
+  border-right: 1px solid #1f2023;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Strict sizing and perfect centering for contracted state */
+.sidebar-container.contracted {
+  width: 72px;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.sidebar-container.expanded {
+  width: 260px;
+  padding: 24px 16px;
+}
+
+/* --- Header Area Controls --- */
+.sidebar-header {
+  width: 100%;
+  margin-bottom: 30px;
+  display: flex;
+  box-sizing: border-box;
+}
+
+.sidebar-container.contracted .sidebar-header {
+  justify-content: center;
+}
+
+.contracted-header-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.hamburger-menu-btn {
+  background: none;
+  border: none;
+  color: #9ba3af;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: color 0.2s;
+}
+.hamburger-menu-btn:hover { color: #ffffff; }
+
+.user-profile-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+}
+
+.profile-info-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #2e3035;
+}
+
+.text-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.user-role {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.toggle-close-btn {
+  background: none;
+  border: none;
+  color: #475569;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+}
+.toggle-close-btn:hover { color: #ef4444; }
+
+/* --- Navigation Button Actions List --- */
+.sidebar-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+  width: 100%;
+}
+
+.sidebar-container.contracted .sidebar-nav-links {
+  align-items: center;
+}
+
+.nav-item-row {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #717680;
+  transition: all 0.2s ease;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+/* Enforce absolute horizontal centering for contracted row icons */
+.sidebar-container.contracted .nav-item-row {
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 10px;
+}
+
+.nav-item-row:hover {
+  color: #cbd5e1;
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Active Capsular Highlight Bubble */
+.nav-item-row.active-link {
+  background-color: #e0f2fe;
+  color: #047857;
+  font-weight: 700;
+}
+
+.nav-icon-box {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+}
+
+/* Fully isolate row inner alignment states */
+.sidebar-container.contracted .nav-icon-box {
+  min-width: unset;
+  width: 100%;
+  height: 100%;
+}
+
+.nav-label-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-grow: 1;
+  margin-left: 14px;
+  font-size: 15px;
+}
+
+.arrow-indicator {
+  font-size: 11px;
+  color: #475569;
+}
+.nav-item-row.active-link .arrow-indicator { color: #047857; }
+
+/* --- Footer Elements Container Configuration --- */
+.sidebar-footer {
+  width: 100%;
+  border-top: 1px solid #1f2023;
+  padding-top: 12px;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-container.contracted .sidebar-footer {
+  align-items: center;
+  padding-top: 16px;
+}
+
+.settings-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Live indicator notification dot */
+.notification-blue-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 7px;
+  height: 7px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  border: 1.5px solid #111214;
+}
