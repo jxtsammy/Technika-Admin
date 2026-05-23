@@ -1,12 +1,11 @@
-import { useState } from 'react';
+
 import './Sidebar.css';
 
-const SidebarNavigation = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState('Dashboard');
+// 1. Accept the props directly from AdminLayout
+const SidebarNavigation = ({ isExpanded, setIsExpanded, activeTab, setActiveTab }) => {
 
   const navItems = [
-    { name: 'Dashboard', icon: 'fas fa-th-large' }, // Using standard FontAwesome grid/dashboard icon
+    { name: 'Dashboard', icon: 'fas fa-th-large' },
     { name: 'Task', icon: 'far fa-check-square' },
     { name: 'Customers', icon: 'far fa-user', hasArrow: true },
     { name: 'Technician', icon: 'far fa-envelope', hasArrow: true },
@@ -54,7 +53,7 @@ const SidebarNavigation = () => {
             <button
               key={item.name}
               className={`nav-item-row ${isActive ? 'active-link' : ''}`}
-              onClick={() => setActiveTab(item.name)}
+              onClick={() => setActiveTab(item.name)} // This now correctly triggers AdminLayout's state
               title={!isExpanded ? item.name : undefined}
             >
               <div className="nav-icon-box">

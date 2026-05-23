@@ -1,27 +1,28 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-
 // Importing your components and screens
 import Login from './components/Login/Login';
-import Admin from './components/Sidebar/Sidebar'
+import AdminLayout from './Layout/AdminLayout'; // Import the layout wrapper
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* HOME PAGE: The "Stacked" One-Page Layout */}
+        {/* HOME PAGE: Login View */}
         <Route
           path="/"
           element={
             <main>
-                <Login />
+              <Login />
             </main>
           }
         />
+
+        {/* ADMIN DASHBOARD PANELS HUB */}
         <Route
           path="/admin"
           element={
-                <Admin />
+            <AdminLayout />
           }
         />
       </Routes>

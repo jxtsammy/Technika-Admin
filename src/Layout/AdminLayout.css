@@ -1,0 +1,25 @@
+/* 1. The main parent container housing both components */
+.dashboard-app-wrapper {
+  display: flex;            /* CRITICAL: This forces the sidebar and right side to sit side-by-side */
+  width: 100%;              /* Ensure it fills the full screen width */
+  min-height: 100vh;
+  background-color: #fbfbfb;
+  overflow-x: hidden;       /* Clean horizontal cut off fallback */
+}
+
+/* 2. The right side screen content container */
+.dashboard-main-content {
+  flex-grow: 1;             /* CRITICAL: Forces this panel to dynamically claim all remaining width */
+  flex-shrink: 1;           /* Allows it to resize smoothly when the sidebar expands */
+  min-width: 0;             /* CRITICAL: Stops inner grids or cards from pushing out and breaking the layout */
+
+  min-height: 100vh;
+  padding: 24px;            /* Adds uniform space around your content dashboards */
+  box-sizing: border-box;
+
+  /* Smoothly transitions the dashboard width changes */
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+  display: flex;
+  flex-direction: column;
+}

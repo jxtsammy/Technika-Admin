@@ -1,0 +1,389 @@
+/* --- Global Reset & Variable Fallbacks --- */
+.service-extra-monitor-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #fbfbfb;
+}
+
+/* --- Top Metrics Summary Stats Grid --- */
+.service-extra-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.service-extra-stat-card {
+  background: #ffffff;
+  border: 1px solid #eaeaea;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.service-extra-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Stat Icon Variations */
+.active-icon { background: #e6fcf5; color: #0ca678; }
+.completed-icon { background: #f0f4f8; color: #1a1a1a; }
+.delayed-icon { background: #fff5f5; color: #fa5252; }
+
+.service-extra-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #888888;
+  letter-spacing: 0.05em;
+  display: block;
+}
+
+.service-extra-stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #111111;
+  margin-top: 2px;
+}
+
+/* --- Control Header Area (Tabs & Filters) --- */
+.service-extra-control-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.service-extra-title-group h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #111111;
+}
+
+.service-extra-live-indicator {
+  font-size: 12px;
+  color: #0ca678;
+  display: block;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.service-extra-filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Status Filter Tabs Row */
+.service-extra-tabs-row {
+  background: #f1f3f5;
+  padding: 4px;
+  border-radius: 8px;
+  display: flex;
+}
+
+.service-extra-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666666;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.service-extra-tab-btn:hover {
+  color: #111111;
+}
+
+.service-extra-tab-btn.active {
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* --- Criteria Dropdown Settings --- */
+.service-extra-dropdown-wrapper {
+  position: relative;
+}
+
+.service-extra-icon-btn {
+  background: #ffffff;
+  border: 1px solid #eaeaea;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  color: #555555;
+  transition: all 0.2s ease;
+}
+
+.service-extra-icon-btn:hover {
+  background: #f8f9fa;
+  border-color: #cccccc;
+}
+
+.service-extra-icon-btn.filter-engaged {
+  background: #1A73E8;
+  color: #ffffff;
+  border-color: #1A73E8;
+}
+
+.service-extra-filter-dropdown {
+  position: absolute;
+  top: 115%;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  width: 190px;
+  padding: 6px;
+  z-index: 100;
+}
+
+.service-extra-filter-dropdown .dropdown-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #999999;
+  padding: 6px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.service-extra-filter-dropdown button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #444444;
+  transition: background 0.15s;
+}
+
+.service-extra-filter-dropdown button:hover {
+  background: #f1f3f5;
+  color: #111111;
+}
+
+.service-extra-filter-dropdown button.selected {
+  font-weight: 700;
+  color: #1A73E8;
+  background: #e8f4fd;
+}
+
+/* --- Task Cards Layout Grid --- */
+.service-extra-tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.service-extra-tasks-grid .service-extra-task-card {
+  background: #ffffff;
+  border: 1px solid #eaeaea;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.01);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.service-extra-tasks-grid .service-extra-task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.service-extra-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.service-extra-task-id {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888888;
+}
+
+/* Badges styling */
+.service-extra-status-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+
+.service-extra-status-badge.in-progress { background: #e6fcf5; color: #0ca678; }
+.service-extra-status-badge.pending { background: #e8f4fd; color: #1A73E8; }
+.service-extra-status-badge.delayed { background: #fff5f5; color: #fa5252; }
+.service-extra-status-badge.completed { background: #f1f3f5; color: #666666; }
+
+.service-extra-task-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.4;
+  margin-bottom: 1.25rem;
+}
+
+/* --- Avatar & Status Indicator Box --- */
+.service-extra-tech-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.service-extra-avatar-box {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #e9ecef; /* Clean background for fallback assets */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.tech-image-file {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Active Indicator Status Dots */
+.service-extra-status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.active-green { background-color: #0ca678; }
+.inactive-yellow { background-color: #fcc419; }
+
+.service-extra-tech-info h5 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.service-extra-tech-info p {
+  font-size: 12px;
+  color: #666666;
+  margin-top: 1px;
+}
+
+/* --- Card Metadata Block --- */
+.service-extra-metadata {
+  border-top: 1px solid #f1f3f5;
+  padding-top: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.meta-line {
+  font-size: 12.5px;
+  color: #555555;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meta-icon {
+  color: #a0a0a0;
+  width: 16px;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* --- Details Card Expand Action Button --- */
+.service-extra-details-btn {
+  background: transparent;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: auto; /* Pushes button directly to the bottom of the card content */
+  transition: all 0.2s ease;
+}
+
+.service-extra-details-btn:hover {
+  background: #f8f9fa;
+  color: #111111;
+  border-color: #cccccc;
+}
+
+.btn-arrow {
+  font-size: 11px;
+  transition: transform 0.2s ease;
+}
+
+.service-extra-details-btn:hover .btn-arrow {
+  transform: translateX(3px);
+}
+
+/* --- Mobile Responsive Screen Breakpoints --- */
+@media (max-width: 768px) {
+  .service-extra-monitor-container {
+    padding: 1rem;
+  }
+
+  .service-extra-control-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .service-extra-filter-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .service-extra-tabs-row {
+    overflow-x: auto;
+    width: calc(100% - 50px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .service-extra-tasks-grid {
+    grid-template-columns: 1fr; /* Single column stack framework structure */
+  }
+}
