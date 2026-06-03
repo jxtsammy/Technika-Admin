@@ -1,219 +1,230 @@
-.login-page {
-  background-color: #eef2f7;
-  height: 100vh;
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@600;700;800&display=swap');
+
+.login-page-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #ffffff;
+  font-family: 'DM Sans', sans-serif;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Roboto', sans-serif;
-
+  overflow-x: hidden; /* Prevents tiny layout shifts during keyframe animations */
 }
 
-.login-card {
-  background: #ffffff;
+.login-split-container {
   width: 100%;
-  max-width: 900px;
-  min-height: auto;
-  border-radius: 28px;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.05);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-
-}
-
-/* --- Left Form Architecture --- */
-.login-form-area {
-  padding: 20px 60px;
+  max-width: 1440px;
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
 }
 
-.form-container {
-  max-width: 380px;
+/* --- Left Side Form Layout --- */
+.login-form-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 3%;
+}
+
+.inner-form-box {
   width: 100%;
-  margin: 40px 0;
+  max-width: 500px;
 }
 
-.form-title {
-  font-size: 32px;
-  font-weight: 800;
-  color: #1a1b26;
-  margin-bottom: 8px;
+/* Increased font size for a larger form presence */
+.login-main-heading {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
 }
 
-.form-subtitle {
-  color: #666;
-  font-size: 15px;
+/* Increased font size for sub-heading */
+.login-sub-heading {
+  font-size: 1.05rem;
+  color: #333333;
+  font-weight: 500;
   margin-bottom: 40px;
 }
 
-/* Input Fields styling */
-.input-group {
-  margin-bottom: 24px;
+/* Increased field gaps slightly for better readability */
+.auth-form-element {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.input-group label {
-  display: block;
-  font-size: 13px;
+.form-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Scaled up input labels */
+.form-input-wrapper label {
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #1a1b26;
-  margin-bottom: 8px;
+  color: #000000;
 }
 
-.input-group input {
-  width: 100%;
-  padding: 16px;
-  border: 1.5px solid #eaeaea;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  font-size: 15px;
-  color: #1a1b26;
-  box-sizing: border-box;
-  transition: all 0.3s ease;
+.password-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.input-group input:focus {
-  outline: none;
-  background-color: #fff;
-  border-color: #007a3f;
-  box-shadow: 0 0 0 4px rgba(124, 77, 255, 0.1);
-}
-
-/* Interaction Controls */
-.btn-primary {
-  width: 100%;
-  padding: 16px;
-  background-color: #007a3f; /* Signature Purple Accent */
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
+/* Scaled up forgot password anchor text */
+.forgot-pass-anchor {
+  font-size: 0.9rem;
   font-weight: 700;
-  cursor: pointer;
-  margin-bottom: 16px;
-  transition: background 0.2s ease;
-
-}
-
-.btn-primary:hover {
-  background-color: #019c51;
-}
-
-.btn-secondary {
-  display: block;
-  width: 100%;
-  padding: 16px;
-  background-color: #f1f3f9;
-  color: #1a1b26;
-  text-align: center;
+  color: #2b44ff;
   text-decoration: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 700;
-  box-sizing: border-box;
-  transition: background 0.2s ease;
+  transition: color 0.2s ease;
 }
 
-.btn-secondary:hover {
-  background-color: #e4e8f2;
+.forgot-pass-anchor:hover {
+  color: #1a2ecb;
 }
 
-.form-footer {
+/* Increased input field padding, font size, and added focus transition effects */
+.form-input-wrapper input {
+  width: 100%;
+  padding: 14px 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.form-input-wrapper input:focus {
+  border-color: #007a3f;
+  box-shadow: 0 0 0 4px rgba(0, 122, 63, 0.1);
+}
+
+.form-input-wrapper input::placeholder {
+  color: #cbd5e1;
+}
+
+/* Checkbox Alignment and Sizing */
+.remember-checkbox-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
+  margin-top: -2px;
 }
 
-/* --- Right Visual Side Panel --- */
-.login-visual-area {
-  background-color: #f3f4f9;
+.checkbox-custom-label {
   display: flex;
-  align-items: flex-end; /* Aligns the image container to the absolute bottom */
-  justify-content: center;
-  border-radius: 24px;
-  margin: 16px;
-
-  /* Remove or set bottom padding to 0 so the image can touch the edge */
-  padding: 40px 40px 0px 40px;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
 }
 
-.panel-artwork {
-  max-width: 150%;
-  max-height: 1000px;
-  object-fit: contain;
-  display: block; /* Removes default inline image spacing at the bottom */
-  margin-bottom: 0;
+.checkbox-custom-label input {
+  accent-color: #007a3f;
+  width: 16px;
+  height: 16px;
 }
 
-/* --- Premium Mobile UI Re-design --- */
-@media (max-width: 768px) {
-  .login-page {
-    background-color: #f8fafc; /* Crisp, clean off-white background */
-    padding: 16px;
-    align-items: center;
-  }
+/* Scaled up checkbox descriptor text */
+.checkbox-text {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #000000;
+}
 
-  .login-card {
-    grid-template-columns: 1fr;
-    min-height: auto;
-    border-radius: 24px;
-    box-shadow: 0 12px 34px rgba(26, 27, 38, 0.04); /* Soft modern shadow */
-    border: 1px solid rgba(234, 234, 234, 0.6);
-  }
+/* Updated Action Link Tag Layout (Inheriting Button Presentation) */
+.btn-solid-login {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  background-color: #007a3f;
+  color: #ffffff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background-color 0.25s ease, transform 0.15s ease;
+}
 
-  .login-form-area {
-    padding: 36px 24px; /* Perfectly proportioned padding for mobile frames */
-    gap: 32px;
-  }
+.btn-solid-login:hover {
+  background-color: #005c2f;
+}
 
-  /* Completely hides the visual illustration column on mobile viewports */
-  .login-visual-area {
+.btn-solid-login:active {
+  transform: scale(0.98);
+}
+
+/* --- Right Side Media Panel Layout (Full Bleed Edge-to-Edge Updates) --- */
+.login-visual-side {
+  flex: 1;
+  display: flex;
+  padding: 0; /* Removed padding to let image reach top, bottom, and right */
+}
+
+.visual-rounded-card {
+  width: 100%;
+  height: 100vh; /* Scaled to complete screen viewport height */
+  border-radius: 0; /* Cleared border radius to snap flush into screen boundaries */
+  overflow: hidden;
+  position: relative;
+  border-top-left-radius: 60px;
+}
+
+.side-panel-artwork {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Smooth entry pan-zoom animation hook */
+  animation: visualZoomReveal 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* --- Interactive Keyframe Animations --- */
+
+/* Form Component Staged Fade-In Introduction */
+.animate-fade-in-up {
+  animation: fadeInUpReveal 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes fadeInUpReveal {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Right Media Card Zoom Reveal Transition */
+@keyframes visualZoomReveal {
+  from {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive Scaling for Mobile Screens */
+@media (max-width: 992px) {
+  .login-visual-side {
     display: none;
   }
-
-  .form-container {
-    max-width: 100%;
-    margin: 0;
-  }
-
-  .form-title {
-    font-size: 26px; /* Optimized typography scale for mobile displays */
-    letter-spacing: -0.5px;
-  }
-
-  .form-subtitle {
-    font-size: 14px;
-    margin-bottom: 28px;
-  }
-
-  /* Mobile Touch Targets Optimization */
-  .input-group {
-    margin-bottom: 20px;
-  }
-
-  .input-group input {
-    padding: 14px 16px; /* Slightly shorter input height for dense mobile screens */
-    font-size: 16px; /* Prevents iOS Safari from auto-zooming when focused */
-    border-radius: 12px;
-  }
-
-  .btn-primary,
-  .btn-secondary {
-    padding: 15px;
-    font-size: 15px;
-    border-radius: 12px;
-  }
-
-  .btn-primary {
-    margin-bottom: 12px;
-  }
-
-  .form-footer {
-    justify-content: center; /* Centers the support link cleanly at the bottom */
-    margin-top: 10px;
+  .login-form-side {
+    flex: 1;
+    padding: 40px 24px;
   }
 }

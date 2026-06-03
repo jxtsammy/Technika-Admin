@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import SidebarNavigation from '../components/Sidebar/Sidebar';
+import './AdminLayout.css';
+import SidebarNavigation from '../components/Navigations/Sidebar/Sidebar';
 import TaskMonitoring from '../components/TaskMonitoring/TaskMonitoring';
-import AdminDashboard from '../components/Dashboard/AdminDashboard'; // Uncomment when ready
+import Technicians from '../components/Technicians/Technicians'
+import Analytics from '../components/Analytics/AnalyticsView'
+import AdminDashboard from '../components/Dashboard/AdminDashboard';
 
 export default function AdminLayout() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -22,10 +25,10 @@ export default function AdminLayout() {
         {activeTab === 'Dashboard' && <AdminDashboard />}
         {activeTab === 'Task' && <TaskMonitoring />}
         {activeTab === 'Customers' && <div className="placeholder-view">Customers View Content</div>}
-        {activeTab === 'Technician' && <div className="placeholder-view">Technicians View Content</div>}
+        {activeTab === 'Technician' && <Technicians />}
         {activeTab === 'Maps' && <div className="placeholder-view">Maps View Content</div>}
         {activeTab === 'Chats' && <div className="placeholder-view">Chats View Content</div>}
-        {activeTab === 'Analytics' && <div className="placeholder-view">Analytics View Content</div>}
+        {activeTab === 'Analytics' && <Analytics />}
         {activeTab === 'Settings' && <div className="placeholder-view">Settings View Content</div>}
       </main>
     </div>

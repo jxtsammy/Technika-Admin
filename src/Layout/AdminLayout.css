@@ -1,25 +1,49 @@
-/* 1. The main parent container housing both components */
+/* Container holds the sidebar and main pane side-by-side */
 .dashboard-app-wrapper {
-  display: flex;            /* CRITICAL: This forces the sidebar and right side to sit side-by-side */
-  width: 100%;              /* Ensure it fills the full screen width */
+  display: flex;
+  width: 100%;
   min-height: 100vh;
-  background-color: #fbfbfb;
-  overflow-x: hidden;       /* Clean horizontal cut off fallback */
+  background-color: #f8fafc;
+  overflow-x: hidden;
+
+  /* 1. Define your exact sidebar width variants here */
+  --sidebar-width-contracted: 80px;
+  --sidebar-width-expanded: 260px;
 }
 
-/* 2. The right side screen content container */
+/* Main content workspace container styling */
 .dashboard-main-content {
-  flex-grow: 1;             /* CRITICAL: Forces this panel to dynamically claim all remaining width */
-  flex-shrink: 1;           /* Allows it to resize smoothly when the sidebar expands */
-  min-width: 0;             /* CRITICAL: Stops inner grids or cards from pushing out and breaking the layout */
-
+  flex-grow: 1;
   min-height: 100vh;
-  padding: 24px;            /* Adds uniform space around your content dashboards */
+  padding: 26px;
+  overflow-y: auto;
   box-sizing: border-box;
 
-  /* Smoothly transitions the dashboard width changes */
-  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Smoothly animate layout transition shift when toggle occurs */
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+/* 2. Pushes content out from underneath the fixed sidebar based on active state modifier classes */
+.dashboard-main-content.sidebar-contracted {
+  margin-left: var(--sidebar-width-contracted);
+  width: calc(100vw - var(--sidebar-width-contracted));
+}
+
+.dashboard-main-content.sidebar-expanded {
+  margin-left: var(--sidebar-width-expanded);
+  width: calc(100vw - var(--sidebar-width-expanded));
+}
+
+/* Fallback structural framework override if screens contain deep nested layout floats */
+.placeholder-view {
+  width: 100%;
+  min-height: 80vh;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  color: #64748b;
+  font-family: 'Poppins', sans-serif;
 }

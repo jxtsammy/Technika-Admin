@@ -1,112 +1,128 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // 1. Added useNavigate to support form submission flows
 import './Login.css';
-import Illustration from '../../assets/img.png';
+import LoginImg from '../../assets/Rebrand.jpg';
 
-const Login = () => {
+const LoginScreen = () => {
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    rememberMe: false,
   });
 
-  // Handle input changes
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
-  // Handle form submission
-  const handleSubmit = (e) => {
+  const handleLoginSubmit = (e) => {
     e.preventDefault();
+    console.log('Logging in with:', formData);
 
-    // Authentication logic can go here
-    console.log('Login Data:', formData);
-
-    // Navigate to dashboard
+    // Process authentication here, then redirect:
     navigate('/admin');
   };
 
   return (
-    <section className="login-page">
-      <div className="login-card">
+    <div className="login-page-wrapper">
+      <div className="login-split-container">
 
-        {/* Left Column: Login Form */}
-        <div className="login-form-area">
-          <div className="form-container">
+        {/* Left Section: Interaction Form */}
+        <div className="login-form-side">
+          <div className="inner-form-box">
 
-            <h1 className="form-title">Welcome back</h1>
+            <h1 className="login-main-heading">Welcome Admin!</h1>
+            <p className="login-sub-heading">Enter your Credentials to access your workspace</p>
 
-            <p className="form-subtitle">
-              Login now to access your dashboard!
-            </p>
+            <form onSubmit={handleLoginSubmit} className="auth-form-element" id="loginForm">
 
-            <form onSubmit={handleSubmit}>
-
-              {/* Email Input */}
-              <div className="input-group">
-                <label htmlFor="email">Admin Email</label>
-
+              {/* Email Entry */}
+              <div className="form-input-wrapper">
+                <label htmlFor="email">Email address</label>
                 <input
                   type="email"
                   id="email"
                   name="email"
-                  placeholder="you@email.com"
+                  placeholder="Enter your email"
                   value={formData.email}
                   onChange={handleChange}
                   required
                 />
               </div>
 
-              {/* Password Input */}
-              <div className="input-group">
-                <label htmlFor="password">Password</label>
-
+              {/* Password Entry */}
+              <div className="form-input-wrapper">
+                <div className="password-label-row">
+                  <label htmlFor="password">Password</label>
+                  <Link to="/forgot-password" className="forgot-pass-anchor">
+                    forgot password
+                  </Link>
+                </div>
                 <input
                   type="password"
                   id="password"
                   name="password"
-                  placeholder="••••••••"
+                  placeholder="Name"
                   value={formData.password}
                   onChange={handleChange}
                   required
                 />
               </div>
 
-              {/* Submit Button */}
-              <button type="submit" className="btn-primary">
-                Sign in
-              </button>
+              {/* Remember Tracker */}
+              <div className="remember-checkbox-row">
+                <label className="checkbox-custom-label">
+                  <input
+                    type="checkbox"
+                    name="rememberMe"
+                    checked={formData.rememberMe}
+                    onChange={handleChange}
+                  />
+                  <span className="checkbox-text">Remember for 30 days</span>
+                </label>
+              </div>
+
+              {/* 2. Replaced button with Link tag */}
+              <Link
+                to="/admin"
+                className="btn-solid-login"
+                onClick={(e) => {
+                  // Forces HTML5 required field validation to run before navigating
+                  const form = document.getElementById('loginForm');
+                  if (!form.checkValidity()) {
+                    form.reportValidity();
+                    e.preventDefault();
+                  } else {
+                    handleLoginSubmit(e);
+                  }
+                }}
+              >
+                Login
+              </Link>
 
             </form>
 
           </div>
-
-          {/*
-          <div className="form-footer">
-            <i className="far fa-envelope"></i>
-            <span>Help@Aura.com</span>
-          </div>
-          */}
         </div>
 
-        {/* Right Column: Illustration */}
-        <div className="login-visual-area">
-
-          <img
-            src={Illustration}
-            alt="Dashboard Illustration"
-            className="panel-artwork"
-          />
-
+        {/* Right Section: Illustrative Panel */}
+        <div className="login-visual-side">
+          <div className="visual-rounded-card">
+            <img
+              src={LoginImg}
+              alt="Monstera Plant Layout"
+              className="side-panel-artwork"
+            />
+          </div>
         </div>
 
       </div>
-    </section>
+    </div>
   );
 };
 
-export default Login;
+export default LoginScreen;

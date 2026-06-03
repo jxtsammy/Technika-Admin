@@ -1,8 +1,12 @@
-
+import { useEffect } from 'react';
 import './Sidebar.css';
 
-// 1. Accept the props directly from AdminLayout
 const SidebarNavigation = ({ isExpanded, setIsExpanded, activeTab, setActiveTab }) => {
+
+  // Update the browser document title whenever activeTab changes
+  useEffect(() => {
+    document.title = `TECHNIKA | ${activeTab}`;
+  }, [activeTab]);
 
   const navItems = [
     { name: 'Dashboard', icon: 'fas fa-th-large' },
@@ -53,7 +57,7 @@ const SidebarNavigation = ({ isExpanded, setIsExpanded, activeTab, setActiveTab 
             <button
               key={item.name}
               className={`nav-item-row ${isActive ? 'active-link' : ''}`}
-              onClick={() => setActiveTab(item.name)} // This now correctly triggers AdminLayout's state
+              onClick={() => setActiveTab(item.name)}
               title={!isExpanded ? item.name : undefined}
             >
               <div className="nav-icon-box">

@@ -1,0 +1,156 @@
+/* 1. Import DM Sans and Syne from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Syne:wght@400..800&display=swap');
+
+.hero-section {
+  /* 2. Apply DM Sans as the baseline font family */
+  font-family: 'DM Sans', sans-serif;
+  background-color: #ffffff;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 20px 4% 0 4%;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+  padding-bottom: 120px;
+}
+
+/* 3. Apply Syne to the main structural title heading */
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 700; /* Syne looks incredible and striking when bold */
+  color: #1a1a1a;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
+
+.highlight-badge {
+  background-color: #007a3f;
+  color: #ffffff;
+  padding: 4px 28px;
+  border-radius: 100px;
+  display: inline-block;
+  font-weight: 600;
+    transform: rotate(-3deg);
+  transform-origin: center;
+}
+
+/* DM Sans works perfectly here for high-readability body copy */
+.hero-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  color: #555555;
+  max-width: 550px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  font-weight: 400;
+}
+
+.hero-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.btn-get-started {
+  font-family: 'DM Sans', sans-serif;
+  background-color: #007a3f;
+  color: #ffffff;
+  border: none;
+  padding: 16px 36px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 100px;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+}
+
+/* Social Proof Styles */
+.hero-actions-row .user-proof-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-stack {
+  display: flex;
+}
+
+.proof-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e5e5;
+  margin-left: -12px;
+}
+
+.proof-avatar:first-child {
+  margin-left: 0;
+}
+
+.proof-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.proof-count {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111111;
+  line-height: 1.2;
+}
+
+.proof-region {
+  font-size: 0.8rem;
+  color: #666666;
+}
+
+/* Panel Artwork Frame Positioning */
+.hero-mockup-wrapper {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 55%;
+  max-width: 660px;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+}
+
+.hero-bottom-mockup {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* Mobile Layout Resets */
+@media (max-width: 992px) {
+  .hero-section {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 60px;
+  }
+
+  .hero-container {
+    padding-bottom: 40px;
+  }
+
+  .hero-mockup-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 40px;
+  }
+}

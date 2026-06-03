@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,600&family=Syne:wght@400..800&display=swap');
+
+.landing-navbar {
+  width: 100%;
+  background-color: #ffffff;
+  padding: 24px 3%;
+  font-family: 'Syne', sans-serif; /* Applied Syne as baseline for navbar wrappers */
+}
+
+.navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+/* Right CTA Button styled with Syne */
+.btn-outline-contact {
+  display: inline-block;
+  font-family: 'Syne', sans-serif;
+  background: transparent;
+  color: #ffffff;
+  background: #007a3f;
+  padding: 10px 24px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 100px;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-outline-contact:hover {
+  border: 1px solid #111111;
+  background: transparent;
+  color: #111111;
+}
+
+@media (max-width: 768px) {
+  .navbar-links {
+    display: none;
+  }
+}
