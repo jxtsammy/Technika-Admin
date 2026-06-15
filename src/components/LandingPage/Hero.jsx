@@ -21,7 +21,7 @@ const HeroSection = () => {
         {/* Action & Social Proof Row */}
         <div className="hero-actions-row">
           <button className="btn-get-started">
-            Admin Signin
+            Admin Login
           </button>
 
           <div className="user-proof-block">

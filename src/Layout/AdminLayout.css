@@ -47,3 +47,19 @@
   color: #64748b;
   font-family: 'Poppins', sans-serif;
 }
+
+/* Container framework wrapper */
+.dashboard-app-wrapper {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+}
+
+/* Global Floating Chat Layer Context Anchor */
+.global-floating-chat-container {
+  position: fixed;
+  bottom: 0;
+  right: 20px;
+  z-index: 9999; /* Higher layer index to sit above main contents and maps */
+  pointer-events: auto; /* Ensures interactivity */
+}

@@ -1,0 +1,321 @@
+/* --- Background Base Canvas --- */
+.dashboard-container {
+  width: 100%;
+  background-color: #f8fafc; /* Crisp, light grey-blue backdrop */
+  padding: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* --- Tabs Header (Direct Replica of image_ae0efc.png) --- */
+.tabs-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.left-tabs {
+  display: flex;
+}
+
+.tab-item {
+  font-size: 15px;
+  font-weight: 600;
+  color: #64748b;
+  padding-bottom: 12px;
+  position: relative;
+  cursor: pointer;
+}
+
+.tab-item.active {
+  color: #0f172a;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #007a3f; /* Targeted Primary Green */
+}
+
+.badge-count {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 6px;
+}
+
+.badge-count.active-badge {
+  background-color: #e6f2ec;
+  color: #007a3f;
+}
+
+.right-stats {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* --- Controls Grid Layout Row --- */
+.search-filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.search-bar-box {
+  position: relative;
+  width: 320px;
+}
+
+.search-bar-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.search-bar-box input {
+  width: 100%;
+  padding: 10px 16px 10px 42px;
+  border: 1px solid #e2e8f0;
+  border-radius: 50px; /* Smooth pill-shaped search input */
+  font-size: 14px;
+  background-color: #ffffff;
+  outline: none;
+  color: #334155;
+}
+
+.search-bar-box input:focus {
+  border-color: #007a3f;
+}
+
+.actions-right-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* --- Custom Toggle Buttons View (Replica) --- */
+.toggle-view-container {
+  display: flex;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.toggle-action-btn {
+  border: none;
+  background: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-action-btn.left-radius { border-radius: 6px 0 0 6px; }
+.toggle-action-btn.right-radius { border-radius: 0 6px 6px 0; }
+
+.toggle-action-btn.selected {
+  background-color: #e6f2ec;
+  color: #007a3f;
+}
+
+/* --- Filter Container Engine --- */
+.custom-select-box {
+  position: relative;
+}
+
+.filter-trigger-btn {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.hidden-select-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* --- Table Framing and Presentation Component --- */
+.table-outer-frame {
+  width: 100%;
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #edf2f7;
+  overflow: hidden;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.dashboard-table th {
+  background-color: #e6f2ec; /* Custom table heading matching primary tone */
+  padding: 14px 20px;
+  color: #007a3f;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.dashboard-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.table-data-row:hover {
+  background-color: #f8fafc;
+}
+
+/* --- Circular Grey Profile Element --- */
+.identity-cell-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.circular-bank-avatar {
+  width: 36px;
+  height: 36px;
+  background-color: #f1f5f9; /* Flat crisp light grey background circle */
+  color: #64748b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.primary-identity-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.muted-table-cell {
+  font-size: 14px;
+  color: #475569;
+}
+
+/* --- Card View Sub-System Layout --- */
+.dashboard-tiles-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.grid-card-item {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.grid-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.card-request-tag {
+  background-color: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.card-title-heading {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+}
+
+.card-metadata-lines p {
+  font-size: 13px;
+  color: #475569;
+  margin: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-metadata-lines i {
+  color: #007a3f;
+}
+
+/* --- Bottom Circle Pagination Controls --- */
+.pagination-numbers-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.page-num-circle {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #0f172a;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.page-num-circle:hover {
+  border-color: #007a3f;
+  color: #007a3f;
+}
+
+.page-num-circle.current-active {
+  background-color: #e6f2ec;
+  border-color: #007a3f;
+  color: #007a3f;
+}
+
+.empty-state-card {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  color: #64748b;
+}

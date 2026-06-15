@@ -11,10 +11,9 @@ const SidebarNavigation = ({ isExpanded, setIsExpanded, activeTab, setActiveTab 
   const navItems = [
     { name: 'Dashboard', icon: 'fas fa-th-large' },
     { name: 'Task', icon: 'far fa-check-square' },
-    { name: 'Customers', icon: 'far fa-user', hasArrow: true },
-    { name: 'Technician', icon: 'far fa-envelope', hasArrow: true },
+    { name: 'Customers', icon: 'fa-solid fa-people-group', hasArrow: true },
+    { name: 'Technician', icon: 'fa-solid fa-person-biking', hasArrow: true },
     { name: 'Maps', icon: 'far fa-map' },
-    { name: 'Chats', icon: 'far fa-comment-alt' },
     { name: 'Analytics', icon: 'fas fa-chart-line', hasArrow: true },
   ];
 

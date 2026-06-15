@@ -2,13 +2,15 @@ import { useState } from 'react';
 import './AdminLayout.css';
 import SidebarNavigation from '../components/Navigations/Sidebar/Sidebar';
 import TaskMonitoring from '../components/TaskMonitoring/TaskMonitoring';
-import Technicians from '../components/Technicians/Technicians'
-import Analytics from '../components/Analytics/AnalyticsView'
+import Technicians from '../components/Technicians/Technicians';
+import Analytics from '../components/Analytics/AnalyticsView';
 import AdminDashboard from '../components/Dashboard/AdminDashboard';
+import CustomerListing from '../components/Customers/CustomerListing/CustomerListing';
+import Chat from '../components/ChatSystem/Chat/Chat';
 
 export default function AdminLayout() {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState('Task'); // Set 'Task' as default to match your screen
+  const [activeTab, setActiveTab] = useState('Dashboard'); // Defaults to Task view
 
   return (
     <div className="dashboard-app-wrapper">
@@ -24,13 +26,17 @@ export default function AdminLayout() {
       <main className={`dashboard-main-content ${isExpanded ? 'sidebar-expanded' : 'sidebar-contracted'}`}>
         {activeTab === 'Dashboard' && <AdminDashboard />}
         {activeTab === 'Task' && <TaskMonitoring />}
-        {activeTab === 'Customers' && <div className="placeholder-view">Customers View Content</div>}
+        {activeTab === 'Customers' && <CustomerListing />}
         {activeTab === 'Technician' && <Technicians />}
         {activeTab === 'Maps' && <div className="placeholder-view">Maps View Content</div>}
-        {activeTab === 'Chats' && <div className="placeholder-view">Chats View Content</div>}
         {activeTab === 'Analytics' && <Analytics />}
         {activeTab === 'Settings' && <div className="placeholder-view">Settings View Content</div>}
       </main>
+
+      {/* Floating Chat Widget - Placed globally to float above all screens */}
+      <div className="global-floating-chat-container">
+        <Chat />
+      </div>
     </div>
   );
 }
