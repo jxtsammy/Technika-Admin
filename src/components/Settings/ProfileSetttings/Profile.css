@@ -13,28 +13,11 @@
 .banner {
   height: 192px;
   background: #f3f4f6; /* Flat background fallback if cover img doesn't load */
-  background-image: url('https://via.placeholder.com/1200x400');
+  background-image: url('../../../assets/coverPhoto.jpg');
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
   position: relative;
-}
-
-.banner-edit-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: rgba(255, 255, 255, 0.8);
-  border: none;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  cursor: pointer;
-  color: #6b7280;
-  font-size: 12px;
 }
 
 /* Profile Header Structure with Negative Margin Offset */
@@ -85,6 +68,7 @@
 
 .profile-titles {
   margin-bottom: 8px;
+  margin-top: 10px;
 }
 
 .name-badge-row {
@@ -94,7 +78,7 @@
 }
 
 .name-badge-row h1 {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
   margin: 0;
   color: #111827;
