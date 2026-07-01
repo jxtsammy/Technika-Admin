@@ -66,7 +66,7 @@ const LoginScreen = () => {
                   type="password"
                   id="password"
                   name="password"
-                  placeholder="Name"
+                  placeholder="password"
                   value={formData.password}
                   onChange={handleChange}
                   required

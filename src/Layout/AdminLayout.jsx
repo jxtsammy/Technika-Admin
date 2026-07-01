@@ -7,6 +7,7 @@ import Analytics from '../components/Analytics/AnalyticsView';
 import AdminDashboard from '../components/Dashboard/AdminDashboard';
 import CustomerListing from '../components/Customers/CustomerListing/CustomerListing';
 import Chat from '../components/ChatSystem/Chat/Chat';
+import Settings from '../components/Settings/Settings'
 
 export default function AdminLayout() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -30,7 +31,7 @@ export default function AdminLayout() {
         {activeTab === 'Technician' && <Technicians />}
         {activeTab === 'Maps' && <div className="placeholder-view">Maps View Content</div>}
         {activeTab === 'Analytics' && <Analytics />}
-        {activeTab === 'Settings' && <div className="placeholder-view">Settings View Content</div>}
+        {activeTab === 'Settings' && <Settings />}
       </main>
 
       {/* Floating Chat Widget - Placed globally to float above all screens */}
