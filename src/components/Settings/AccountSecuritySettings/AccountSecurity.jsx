@@ -39,11 +39,11 @@ export default function AccountSecurity() {
         {/* Sessions Block */}
         <div className="security-block">
           <div className="block-header">
-            <h3><i className="fa-solid fa-right-from-bracket"></i> Log out of other sessions</h3>
-            <p>Clear all your active user sessions. This will log you out of all other devices and browsers, except this one.</p>
+            <h3><i className="fa-solid fa-right-from-bracket"></i>Account Sign-Out</h3>
+            <p>Signing out will end your current session and require you to log in again to access your account.</p>
           </div>
           <div className="block-row actions-only">
-            <button className="btn-danger-outline">Log out of other sessions</button>
+            <button className="btn-danger-outline">Sign-Out Account</button>
           </div>
         </div>
 
