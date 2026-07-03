@@ -31,7 +31,7 @@ const SidebarNavigation = ({ isExpanded, setIsExpanded, activeTab, setActiveTab 
                 className="avatar-img"
               />
               <div className="text-meta">
-                <span className="user-name">Anna George</span>
+                <span className="user-name">Samuel Sallo</span>
                 <span className="user-role">Administrator</span>
               </div>
             </div>
@@ -83,7 +83,6 @@ const SidebarNavigation = ({ isExpanded, setIsExpanded, activeTab, setActiveTab 
         >
           <div className="nav-icon-box settings-icon-wrapper">
             <i className="fas fa-cog"></i>
-            {!isExpanded && <span className="notification-blue-dot"></span>}
           </div>
           {isExpanded && (
             <div className="nav-label-content">

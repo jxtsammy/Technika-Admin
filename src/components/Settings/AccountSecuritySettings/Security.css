@@ -1,6 +1,5 @@
-/* Stacked layout shell */
 .security-section-container {
-  padding: 32px 0;
+  padding: 0 38px;
   display: flex;
   flex-direction: column;
   gap: 24px;

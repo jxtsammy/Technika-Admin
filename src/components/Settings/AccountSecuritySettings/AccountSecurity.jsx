@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
 import './Security.css';
 import ChangePasswordModal from './ChangePassword/ChangePasswordModal';
 import DeleteAccountModal from './DeleteAccount/DeleteAccountModal';
@@ -6,6 +7,13 @@ import DeleteAccountModal from './DeleteAccount/DeleteAccountModal';
 export default function AccountSecurity() {
   const [isPassordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
+
+  const navigate = useNavigate(); // 2. Initialize the navigation hook
+
+  const handleSignOut = () => {
+    // Add any sign-out cleanup logic here (e.g., localStorage.clear())
+    navigate('/'); // 3. Navigate home
+  };
 
   return (
     <div className="security-section-container">
@@ -43,7 +51,10 @@ export default function AccountSecurity() {
             <p>Signing out will end your current session and require you to log in again to access your account.</p>
           </div>
           <div className="block-row actions-only">
-            <button className="btn-danger-outline">Sign-Out Account</button>
+            {/* 4. Attach handleSignOut to onClick */}
+            <button className="btn-danger-outline" onClick={handleSignOut}>
+              Sign-Out Account
+            </button>
           </div>
         </div>
 

@@ -8,6 +8,7 @@ import AdminDashboard from '../components/Dashboard/AdminDashboard';
 import CustomerListing from '../components/Customers/CustomerListing/CustomerListing';
 import Chat from '../components/ChatSystem/Chat/Chat';
 import Settings from '../components/Settings/Settings'
+import Map from '../components/Map/Map'
 
 export default function AdminLayout() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -29,7 +30,7 @@ export default function AdminLayout() {
         {activeTab === 'Task' && <TaskMonitoring />}
         {activeTab === 'Customers' && <CustomerListing />}
         {activeTab === 'Technician' && <Technicians />}
-        {activeTab === 'Maps' && <div className="placeholder-view">Maps View Content</div>}
+        {activeTab === 'Maps' && <Map />}
         {activeTab === 'Analytics' && <Analytics />}
         {activeTab === 'Settings' && <Settings />}
       </main>
