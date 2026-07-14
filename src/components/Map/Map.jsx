@@ -166,29 +166,6 @@ export default function MapScreen() {
             </Marker>
           ))}
         </MapContainer>
-
-        {/* Active Selected Floating Detail Focus Overlay Panel */}
-        {selectedTech && (
-          <div className="floating-detail-overlay-card">
-            <div className="overlay-header-row">
-              <div className="overlay-profile-meta">
-                <img src={defaultAvatar} alt={selectedTech.name} className="overlay-avatar" />
-                <div>
-                  <h3>{selectedTech.name}</h3>
-                  <span className="overlay-specialty-tag">{selectedTech.specialty}</span>
-                </div>
-              </div>
-              <span className={`status-pill ${selectedTech.status}`}>{selectedTech.status}</span>
-            </div>
-
-            <p className="overlay-description-body">{selectedTech.description}</p>
-
-            <div className="overlay-footer-metrics">
-              <span className="metric-pill"><i className="fa-solid fa-car-side"></i> {(selectedTech.distance / 1000).toFixed(1)} km away</span>
-              <button className="btn-overlay-action">Assign Route</button>
-            </div>
-          </div>
-        )}
       </div>
 
     </div>
