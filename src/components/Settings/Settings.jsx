@@ -1,25 +1,71 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './Settings.css';
+import api from '../../api';
 
 export default function SettingsScreen() {
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: 'Azusa Nakano',
-    email: 'elementary221b@gmail.com',
-    phone: '+44 (123) 456-9878',
+    fullName: '',
+    email: '',
+    phone: '',
   });
 
   // Set to null initially so we can render the default profile icon if empty
   const [avatar, setAvatar] = useState(null);
   const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const res = await api.get('/users/profile');
+        const profile = res.data || {};
+        setFormData({
+          fullName: `${profile.firstName || ''} ${profile.lastName || ''}`.trim(),
+          email: profile.email || '',
+          phone: profile.phoneNumber || '',
+        });
+        if (profile.profilePicture) setAvatar(profile.profilePicture);
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+      }
+    }
+    loadProfile();
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const trimmed = formData.fullName.trim();
+      const parts = trimmed.split(' ');
+      const firstName = parts.shift() || '';
+      const lastName = parts.join(' ');
+
+      await api.put('/users/profile', {
+        firstName,
+        lastName,
+        phoneNumber: formData.phone,
+        profilePicture: avatar,
+      });
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleToggleEdit = () => {
-    setIsEditing((prev) => !prev);
+    if (isEditing) {
+      handleSaveProfile();
+    } else {
+      setIsEditing(true);
+    }
   };
 
   const handleUploadClick = () => {
@@ -59,7 +105,7 @@ export default function SettingsScreen() {
 
           <div className="profile-titles">
             <div className="name-badge-row">
-              <h1>Azunyan U. Wu</h1>
+              <h1>{formData.fullName}</h1>
               <span className="badge-pro">Pro</span>
             </div>
             <p className="profile-email">{formData.email}</p>
@@ -68,8 +114,8 @@ export default function SettingsScreen() {
 
         {/* Right-aligned Small Edit Button */}
         <div className="header-actions">
-          <button onClick={handleToggleEdit} className="btn-primary">
-            {isEditing ? 'Save' : 'Edit'}
+          <button onClick={handleToggleEdit} className="btn-primary" disabled={saving}>
+            {saving ? 'Saving...' : isEditing ? 'Save' : 'Edit'}
           </button>
         </div>
       </div>
@@ -112,7 +158,7 @@ export default function SettingsScreen() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  disabled={!isEditing}
+                  disabled
                 />
               </div>
             </div>

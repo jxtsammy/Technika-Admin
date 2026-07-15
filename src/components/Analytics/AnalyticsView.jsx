@@ -1,17 +1,46 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './AnalyticsView.css';
+import api from '../../api';
 
-const MOCK_TASKS = [
-  { id: 'TK-4921', desc: 'High-Voltage Transformer Maintenance', tech: 'Marcus Chen', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80', location: 'North Substation A12', completedAt: '2024-05-15 14:30', duration: '2h 45m', status: 'Completed' },
-  { id: 'TK-4883', desc: 'Fiber Optic Line Repair', tech: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80', location: 'Central Hub - Floor 4', completedAt: '2024-05-15 11:20', duration: '1h 15m', status: 'Completed' },
-  { id: 'TK-4870', desc: 'Industrial HVAC Filter Replacement', tech: 'David Rodriguez', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80', location: 'South Manufacturing Plant', completedAt: '2024-05-14 16:45', duration: '45m', status: 'Not Completed' },
-  { id: 'TK-4852', desc: 'Generator Load Test', tech: 'Elena Rossi', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&q=80', location: 'East Emergency Backup', completedAt: '2024-05-14 09:15', duration: '3h 20m', status: 'Completed' },
-  { id: 'TK-4841', desc: 'Solar Panel Array Cleaning', tech: 'Marcus Chen', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80', location: 'Rooftop Sector 7', completedAt: '2024-05-13 15:50', duration: '2h 10m', status: 'Cancelled' }
-];
+// Maps backend status values to the display labels used by the badges/filter
+const STATUS_LABELS = {
+  completed: 'Completed',
+  pending: 'In Progress',
+  available: 'Pending',
+};
+
+const techName = (user) =>
+  user && (user.firstName || user.lastName)
+    ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+    : 'Unassigned';
+
+const formatDateTime = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+};
+
+const formatDuration = (task) => {
+  if (!task.acknowledgedAt || !task.completedAt) return '—';
+  const mins = Math.round((new Date(task.completedAt) - new Date(task.acknowledgedAt)) / 60000);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+};
+
+const formatMinutes = (mins) => {
+  if (!mins) return '—';
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+};
 
 export default function AnalyticsView() {
-  const [startDate, setStartDate] = useState('2024-05-01');
-  const [endDate, setEndDate] = useState('2024-05-31');
+  const [tasks, setTasks] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedTech, setSelectedTech] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All Statuses');
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,26 +48,65 @@ export default function AnalyticsView() {
 
   const recordsPerPage = 5;
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [tasksRes, statsRes] = await Promise.all([
+          api.get('/tasks'),
+          api.get('/tasks/stats'),
+        ]);
+        setTasks(tasksRes.data || []);
+        setStats(statsRes.data || null);
+      } catch (err) {
+        console.error('Failed to load analytics data:', err);
+        setLoadError(err.response?.data?.message || 'Failed to load analytics data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const technicianNames = useMemo(() => {
+    const names = new Set();
+    tasks.forEach((t) => {
+      if (t.assignedTo) names.add(techName(t.assignedTo));
+    });
+    return [...names].sort();
+  }, [tasks]);
+
   const handleReset = () => {
-    setStartDate('2024-05-01');
-    setEndDate('2024-05-31');
+    setStartDate('');
+    setEndDate('');
     setSelectedTech('All');
     setSelectedStatus('All Statuses');
     setSearchQuery('');
     setCurrentPage(1);
   };
 
-  const filteredTasks = MOCK_TASKS.filter(task => {
-    const matchesTech = selectedTech === 'All' || task.tech === selectedTech;
-    const matchesStatus = selectedStatus === 'All Statuses' || task.status === selectedStatus;
-    const matchesSearch = task.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          task.desc.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTech && matchesStatus && matchesSearch;
+  const filteredTasks = tasks.filter((task) => {
+    const statusLabel = STATUS_LABELS[task.status] || task.status;
+    const name = techName(task.assignedTo);
+    const matchesTech = selectedTech === 'All' || name === selectedTech;
+    const matchesStatus = selectedStatus === 'All Statuses' || statusLabel === selectedStatus;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      task._id.toLowerCase().includes(q) ||
+      (task.title || '').toLowerCase().includes(q) ||
+      (task.description || '').toLowerCase().includes(q);
+    const created = task.createdAt ? new Date(task.createdAt) : null;
+    const matchesStart = !startDate || (created && created >= new Date(startDate));
+    const matchesEnd = !endDate || (created && created <= new Date(`${endDate}T23:59:59`));
+    return matchesTech && matchesStatus && matchesSearch && matchesStart && matchesEnd;
   });
 
   const totalRecords = filteredTasks.length;
   const totalPages = Math.ceil(totalRecords / recordsPerPage) || 1;
   const currentRecords = filteredTasks.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage);
+
+  const totalCompleted = stats?.completed ?? 0;
+  const totalAll = (stats?.completed ?? 0) + (stats?.pending ?? 0) + (stats?.available ?? 0);
+  const openRate = totalAll > 0 ? Math.round(((totalAll - totalCompleted) / totalAll) * 100) : 0;
 
   return (
     <div className="analytics-container">
@@ -50,6 +118,8 @@ export default function AnalyticsView() {
         </div>
       </header>
 
+      {loadError && <p style={{ color: '#c0392b' }}>{loadError}</p>}
+
       {/* Modern Data Card Grid */}
       <section className="metrics-dashboard-grid">
         <div className="metric-card-item">
@@ -58,8 +128,7 @@ export default function AnalyticsView() {
             <div className="icon-badge complete-bg"><i className="fas fa-check-circle"></i></div>
           </div>
           <div className="metric-value-row">
-            <h2>1,248</h2>
-            <span className="trend-indicator trend-up"><i className="fas fa-arrow-up"></i> 12%</span>
+            <h2>{loading ? '…' : totalCompleted.toLocaleString()}</h2>
           </div>
         </div>
 
@@ -69,30 +138,27 @@ export default function AnalyticsView() {
             <div className="icon-badge time-bg"><i className="fas fa-clock"></i></div>
           </div>
           <div className="metric-value-row">
-            <h2>2h 14m</h2>
-            <span className="trend-indicator trend-up"><i className="fas fa-arrow-down"></i> 5m</span>
+            <h2>{loading ? '…' : formatMinutes(stats?.averageCompletionMinutes)}</h2>
           </div>
         </div>
 
         <div className="metric-card-item">
           <div className="metric-card-header">
-            <span className="metric-title">Exception Rate</span>
+            <span className="metric-title">Open Task Rate</span>
             <div className="icon-badge error-bg"><i className="fas fa-exclamation-triangle"></i></div>
           </div>
           <div className="metric-value-row">
-            <h2>3.2%</h2>
-            <span className="trend-flat">Stable</span>
+            <h2>{loading ? '…' : `${openRate}%`}</h2>
           </div>
         </div>
 
         <div className="metric-card-item">
           <div className="metric-card-header">
-            <span className="metric-title">Total Distance</span>
-            <div className="icon-badge distance-bg"><i className="fas fa-route"></i></div>
+            <span className="metric-title">Total Tasks</span>
+            <div className="icon-badge distance-bg"><i className="fas fa-layer-group"></i></div>
           </div>
           <div className="metric-value-row">
-            <h2>4,850 km</h2>
-            <span className="trend-indicator trend-up"><i className="fas fa-arrow-up"></i> 8.4%</span>
+            <h2>{loading ? '…' : totalAll.toLocaleString()}</h2>
           </div>
         </div>
       </section>
@@ -106,7 +172,7 @@ export default function AnalyticsView() {
 
         <div className="filter-inputs-grid">
           <div className="filter-field-wrapper">
-            <label>Date Range Range</label>
+            <label>Date Range</label>
             <div className="date-range-split-input">
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               <span className="range-to-indicator">to</span>
@@ -119,22 +185,21 @@ export default function AnalyticsView() {
             <div className="select-dropdown-style">
               <select value={selectedTech} onChange={(e) => setSelectedTech(e.target.value)}>
                 <option value="All">All Technicians</option>
-                <option value="Marcus Chen">Marcus Chen</option>
-                <option value="Sarah Jenkins">Sarah Jenkins</option>
-                <option value="David Rodriguez">David Rodriguez</option>
-                <option value="Elena Rossi">Elena Rossi</option>
+                {technicianNames.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
               </select>
             </div>
           </div>
 
           <div className="filter-field-wrapper">
-            <label>Archived Task Status</label>
+            <label>Task Status</label>
             <div className="select-dropdown-style">
               <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
                 <option value="All Statuses">All Statuses</option>
                 <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-                <option value="Not Completed">Not Completed</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Pending">Pending</option>
               </select>
             </div>
           </div>
@@ -144,10 +209,6 @@ export default function AnalyticsView() {
           <button className="btn-clear-filters" onClick={handleReset}>
             <i className="fas fa-eraser"></i> Clear Settings
           </button>
-          <div className="export-action-cluster">
-            <button className="btn-export secondary-export"><i className="fas fa-file-csv"></i> Export CSV Data</button>
-            <button className="btn-export primary-export"><i className="fas fa-file-pdf"></i> Download Report PDF</button>
-          </div>
         </div>
       </section>
 
@@ -180,36 +241,40 @@ export default function AnalyticsView() {
                 <th>Completed At</th>
                 <th>Total Duration</th>
                 <th>Status</th>
-                <th style={{ width: '50px', textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {currentRecords.map((task) => (
-                <tr key={task.id}>
-                  <td className="styled-id-string">{task.id}</td>
-                  <td className="styled-desc-paragraph">{task.desc}</td>
-                  <td>
-                    <div className="avatar-chip-container">
-                      <img src={task.avatar} alt="" />
-                      <span>{task.tech}</span>
-                    </div>
-                  </td>
-                  <td className="styled-location-text">
-                    <i className="fas fa-map-marker-alt location-marker-dot"></i> {task.location}
-                  </td>
-                  <td className="timestamp-data-cell">{task.completedAt}</td>
-                  <td className="duration-data-cell">{task.duration}</td>
-                  <td>
-                    <span className={`pill-status badge-${task.status.toLowerCase().replace(' ', '-')}`}>
-                      <span className="status-bullet-dot"></span>
-                      {task.status}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <button className="btn-row-action-trigger"><i className="fas fa-ellipsis-h"></i></button>
-                  </td>
-                </tr>
-              ))}
+              {loading ? (
+                <tr><td colSpan="7" style={{ textAlign: 'center' }}>Loading tasks…</td></tr>
+              ) : currentRecords.length === 0 ? (
+                <tr><td colSpan="7" style={{ textAlign: 'center' }}>No tasks found</td></tr>
+              ) : currentRecords.map((task) => {
+                const statusLabel = STATUS_LABELS[task.status] || task.status;
+                const name = techName(task.assignedTo);
+                return (
+                  <tr key={task._id}>
+                    <td className="styled-id-string">{task._id.slice(-6).toUpperCase()}</td>
+                    <td className="styled-desc-paragraph">{task.title}</td>
+                    <td>
+                      <div className="avatar-chip-container">
+                        <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`} alt="" />
+                        <span>{name}</span>
+                      </div>
+                    </td>
+                    <td className="styled-location-text">
+                      <i className="fas fa-map-marker-alt location-marker-dot"></i> {task.location?.address || '—'}
+                    </td>
+                    <td className="timestamp-data-cell">{formatDateTime(task.completedAt)}</td>
+                    <td className="duration-data-cell">{formatDuration(task)}</td>
+                    <td>
+                      <span className={`pill-status badge-${statusLabel.toLowerCase().replace(' ', '-')}`}>
+                        <span className="status-bullet-dot"></span>
+                        {statusLabel}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

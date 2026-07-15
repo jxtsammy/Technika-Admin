@@ -1,27 +1,45 @@
 import { useState, useRef, useEffect } from 'react';
 import './Chat.css';
+import api from '../../../api';
 
-const INITIAL_CHATS = [
-  { id: 1, name: 'Ebenezer Quarcoo', role: 'Cyber Security and Digital Forensics Student || Graphic Designer', lastMsg: 'Ebenezer: Congrats on the new role!', date: 'May 11', unread: true, favourite: false, archived: false },
-  { id: 2, name: 'Fiador Prince', role: 'Solutions Architect', lastMsg: 'Fiador: yes please, All is well', date: 'May 6', unread: true, favourite: false, archived: false },
-  { id: 3, name: 'Stephen Quarcoo', role: 'Software Engineer', lastMsg: "Stephen: You're welcome", date: 'May 6', unread: false, favourite: false, archived: false },
-  { id: 4, name: 'Maneedeep Mangapoti', role: 'DevOps Lead', lastMsg: "Maneedeep: You're welcome", date: 'May 6', unread: false, favourite: false, archived: false }
-];
+// The logged-in admin (used to identify "self" among participants / message senders)
+const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+const adminId = adminUser._id || adminUser.id;
+const adminEmail = adminUser.email;
 
-// Master list of all possible system users to start a new message with
-const ALL_SYSTEM_USERS = [
-  { id: 1, name: 'Ebenezer Quarcoo', role: 'Cyber Security and Digital Forensics Student || Graphic Designer' },
-  { id: 2, name: 'Fiador Prince', role: 'Solutions Architect' },
-  { id: 3, name: 'Stephen Quarcoo', role: 'Software Engineer' },
-  { id: 4, name: 'Maneedeep Mangapoti', role: 'DevOps Lead' },
-  { id: 5, name: 'Samuel Sallo', role: 'Frontend Developer' },
-  { id: 6, name: 'Ama Serwaa', role: 'UI/UX Designer' }
-];
+// True when the given participant/sender is the logged-in admin
+const isSelf = (person) => {
+  if (!person) return false;
+  if (adminId && person._id) return person._id === adminId;
+  if (adminEmail && person.email) return person.email === adminEmail;
+  return false;
+};
+
+const participantName = (person) =>
+  person ? `${person.firstName || ''} ${person.lastName || ''}`.trim() : 'Unknown';
+
+// Maps a backend chat document into the shape the UI consumes, preserving
+// any local-only flags (unread / favourite / archived) already tracked.
+const mapChat = (chat, prevFlags = {}) => {
+  const other = (chat.participants || []).find(p => !isSelf(p)) || {};
+  return {
+    id: chat._id,
+    name: participantName(other),
+    role: other.role || 'Technician',
+    participantId: other._id,
+    lastMsg: chat.lastMessage?.content || 'No messages yet',
+    date: chat.updatedAt ? new Date(chat.updatedAt).toLocaleDateString() : '',
+    unread: prevFlags.unread || false,
+    favourite: prevFlags.favourite || false,
+    archived: prevFlags.archived || false,
+  };
+};
 
 export default function Chat() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeChat, setActiveChat] = useState(null);
-  const [chats, setChats] = useState(INITIAL_CHATS);
+  const [chats, setChats] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
   const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('name');
@@ -42,6 +60,59 @@ export default function Chat() {
     }
   }, [activeChat, messages]);
 
+  const loadChats = async () => {
+    try {
+      const res = await api.get('/chats');
+      setChats(prev => {
+        const flagMap = Object.fromEntries(prev.map(c => [c.id, c]));
+        return (res.data || []).map(chat => mapChat(chat, flagMap[chat._id]));
+      });
+    } catch (err) {
+      console.error('Failed to load chats:', err);
+    }
+  };
+
+  const loadTechnicians = async () => {
+    try {
+      const res = await api.get('/users/technicians');
+      setTechnicians(res.data || []);
+    } catch (err) {
+      console.error('Failed to load technicians:', err);
+    }
+  };
+
+  // Load chats whenever the widget is opened
+  useEffect(() => {
+    if (isOpen) (async () => { await loadChats(); })();
+  }, [isOpen]);
+
+  // Load the technician list used by the New Message composer
+  useEffect(() => {
+    (async () => { await loadTechnicians(); })();
+  }, []);
+
+  // Load messages when a chat is opened
+  useEffect(() => {
+    if (!activeChat) return;
+    async function loadMessages() {
+      try {
+        const res = await api.get(`/chats/${activeChat.id}/messages`);
+        const mapped = (res.data || []).map(msg => ({
+          id: msg._id,
+          text: msg.content,
+          sender: isSelf(msg.sender) ? 'me' : 'other',
+          time: msg.createdAt
+            ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : '',
+        }));
+        setMessages(prev => ({ ...prev, [activeChat.id]: mapped }));
+      } catch (err) {
+        console.error('Failed to load messages:', err);
+      }
+    }
+    loadMessages();
+  }, [activeChat]);
+
   // Tab Filtering & Main Search Logic
   const processedChats = chats.filter(chat => {
     const matchesSearch = chat.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -59,12 +130,12 @@ export default function Chat() {
     return matchesSearch;
   });
 
-  // Filter system users for the New Message search engine
-  const filteredNewUsers = ALL_SYSTEM_USERS.filter(user =>
-    user.name.toLowerCase().includes(newUserSearch.toLowerCase())
+  // Filter technicians for the New Message search engine
+  const filteredNewUsers = technicians.filter(tech =>
+    `${tech.firstName || ''} ${tech.lastName || ''}`.toLowerCase().includes(newUserSearch.toLowerCase())
   );
 
-  // Dynamic context action updates
+  // Dynamic context action updates (local-only state, not tracked by the backend)
   const handleAction = (id, action) => {
     setChats(prev => prev.map(chat => {
       if (chat.id === id) {
@@ -80,45 +151,45 @@ export default function Chat() {
     setActiveMenuId(null);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!typedMessage.trim() || !activeChat) return;
     const chatId = activeChat.id;
-    const newMsg = { id: Date.now(), text: typedMessage, sender: 'me', time: 'Just now' };
+    const content = typedMessage;
+    const optimisticMsg = { id: `temp-${chatId}-${content.length}`, text: content, sender: 'me', time: 'Just now' };
 
+    // Optimistically show the message immediately
     setMessages(prev => ({
       ...prev,
-      [chatId]: [...(prev[chatId] || []), newMsg]
+      [chatId]: [...(prev[chatId] || []), optimisticMsg]
     }));
-
-    setChats(prev => prev.map(c => c.id === chatId ? { ...c, lastMsg: `You: ${typedMessage}`, date: 'Just now' } : c));
+    setChats(prev => prev.map(c => c.id === chatId ? { ...c, lastMsg: content } : c));
     setTypedMessage('');
+
+    // Confirm with the API
+    try {
+      await api.post(`/chats/${chatId}/messages`, { content });
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    }
   };
 
-  const handleSelectUserForNewMessage = (user) => {
-    // Check if conversation track already exists
-    let existingChat = chats.find(c => c.name === user.name);
+  const handleSelectUserForNewMessage = async (tech) => {
+    try {
+      const res = await api.post('/chats', { participantId: tech._id });
+      const flagMap = Object.fromEntries(chats.map(c => [c.id, c]));
+      const mapped = mapChat(res.data, flagMap[res.data._id]);
 
-    if (!existingChat) {
-      const newChatObj = {
-        id: chats.length + 1,
-        name: user.name,
-        role: user.role,
-        lastMsg: 'No messages yet',
-        date: 'Now',
-        unread: false,
-        favourite: false,
-        archived: false
-      };
-      setChats(prev => [newChatObj, ...prev]);
-      existingChat = newChatObj;
-    } else if (existingChat.archived) {
-      // If conversation is archived, safely restore it
-      existingChat.archived = false;
+      setChats(prev => {
+        const exists = prev.some(c => c.id === mapped.id);
+        return exists ? prev.map(c => (c.id === mapped.id ? { ...c, archived: false } : c)) : [mapped, ...prev];
+      });
+
+      setActiveChat(mapped);
+      setIsNewMessageMode(false);
+      setNewUserSearch('');
+    } catch (err) {
+      console.error('Failed to start chat:', err);
     }
-
-    setActiveChat(existingChat);
-    setIsNewMessageMode(false);
-    setNewUserSearch('');
   };
 
   return (
@@ -176,12 +247,12 @@ export default function Chat() {
                     <p>No connections found matching "{newUserSearch}"</p>
                   </div>
                 ) : (
-                  filteredNewUsers.map(user => (
-                    <div key={user.id} className="lk-new-user-row-item" onClick={() => handleSelectUserForNewMessage(user)}>
-                      <img src={`https://i.pravatar.cc/150?img=${user.id + 10}`} alt="" className="lk-new-user-avatar" />
+                  filteredNewUsers.map(tech => (
+                    <div key={tech._id} className="lk-new-user-row-item" onClick={() => handleSelectUserForNewMessage(tech)}>
+                      <img src={tech.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(`${tech.firstName} ${tech.lastName}`)}&background=random`} alt="" className="lk-new-user-avatar" />
                       <div className="lk-new-user-details">
-                        <h5>{user.name}</h5>
-                        <p>{user.role}</p>
+                        <h5>{tech.firstName} {tech.lastName}</h5>
+                        <p>{tech.role || 'Technician'}</p>
                       </div>
                     </div>
                   ))
@@ -241,7 +312,7 @@ export default function Chat() {
                   processedChats.map(chat => (
                     <div key={chat.id} className={`lk-chat-item ${chat.unread ? 'unread-style' : ''}`} onClick={() => setActiveChat(chat)}>
                       <div className="lk-item-avatar-wrapper">
-                        <img src={`https://i.pravatar.cc/150?img=${chat.id + 10}`} alt={chat.name} className="lk-item-pfp" />
+                        <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name)}&background=random`} alt={chat.name} className="lk-item-pfp" />
                         <span className="lk-status-dot online-hollow"></span>
                       </div>
 
@@ -300,19 +371,9 @@ export default function Chat() {
 
               <div className="lk-messages-timeline" ref={messageAreaRef}>
                 <div className="lk-user-intro-card">
-                  <img src={`https://i.pravatar.cc/150?img=${activeChat.id + 10}`} alt={activeChat.name} className="lk-intro-avatar" />
+                  <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(activeChat.name)}&background=random`} alt={activeChat.name} className="lk-intro-avatar" />
                   <h3>{activeChat.name} <span className="lk-badge-dist">· 1st</span></h3>
                   <p>{activeChat.role}</p>
-                </div>
-
-                <div className="lk-timeline-divider"><span>MAY 11</span></div>
-
-                <div className="lk-msg-bubble-group">
-                  <img src={`https://i.pravatar.cc/150?img=${activeChat.id + 10}`} alt="" className="lk-msg-bubble-pfp" />
-                  <div className="lk-msg-bubble-contents">
-                    <h5>{activeChat.name} <span>• 8:37 PM</span></h5>
-                    <p>Congrats on the new role!</p>
-                  </div>
                 </div>
 
                 {(messages[activeChat.id] || []).map(msg => (

@@ -1,19 +1,13 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import './Technicians.css';
 import Profile from '../../assets/profile.png'
+import api from '../../api';
 
-const INITIAL_TECHNICIANS = [
-  { id: 'TECH-001', name: 'Marcus Chen', email: 'm.chen@teknica.com', phone: '+1 (555) 123-4567', status: 'Active', assignment: 'Main Power Grid Repair', assignmentStatus: 'In Progress', avatar: {Profile} },
-  { id: 'TECH-002', name: 'Sarah Jenkins', email: 's.jenkins@teknica.com', phone: '+1 (555) 987-6543', status: 'Active', assignment: 'Routine Substation Inspection', assignmentStatus: 'Pending', avatar: 'https://via.placeholder.com/40' },
-  { id: 'TECH-003', name: 'Robert Miller', email: 'r.miller@teknica.com', phone: '+1 (555) 456-7890', status: 'Inactive', assignment: 'No Active Task', assignmentStatus: '', avatar: 'https://via.placeholder.com/40' },
-  { id: 'TECH-004', name: 'Elena Rodriguez', email: 'e.rodriguez@teknica.com', phone: '+1 (555) 222-3333', status: 'Active', assignment: 'Fiber Optic Installation', assignmentStatus: 'In Progress', avatar: 'https://via.placeholder.com/40' },
-  { id: 'TECH-005', name: 'David Wilson', email: 'd.wilson@teknica.com', phone: '+1 (555) 777-8888', status: 'Active', assignment: 'Hydraulic Valve Replacement', assignmentStatus: 'Pending', avatar: 'https://via.placeholder.com/40' },
-  { id: 'TECH-006', name: 'Alana Parker', email: 'a.parker@teknica.com', phone: '+1 (555) 333-4444', status: 'Active', assignment: 'Server Rack Optimization', assignmentStatus: 'In Progress', avatar: 'https://via.placeholder.com/40' },
-  { id: 'TECH-007', name: 'James Thorne', email: 'j.thorne@teknica.com', phone: '+1 (555) 555-6666', status: 'Inactive', assignment: 'No Active Task', assignmentStatus: '', avatar: 'https://via.placeholder.com/40' }
-];
+const fullName = (tech) =>
+  `${tech.firstName || ''} ${tech.lastName || ''}`.trim();
 
 export default function Technicians() {
-  const [technicians, setTechnicians] = useState(INITIAL_TECHNICIANS);
+  const [technicians, setTechnicians] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCriteria, setFilterCriteria] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -21,6 +15,18 @@ export default function Technicians() {
 
   const ITEMS_PER_PAGE = 5;
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    async function loadTechnicians() {
+      try {
+        const res = await api.get('/users/technicians');
+        setTechnicians(res.data || []);
+      } catch (err) {
+        console.error('Failed to load technicians:', err);
+      }
+    }
+    loadTechnicians();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -37,16 +43,18 @@ export default function Technicians() {
   }, [searchQuery, filterCriteria]);
 
   const filteredTechnicians = useMemo(() => {
+    const query = searchQuery.toLowerCase();
     return technicians.filter(tech => {
-      const matchesSearch =
-        tech.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tech.email.toLowerCase().includes(searchQuery.toLowerCase());
+      const name = fullName(tech).toLowerCase();
+      const email = (tech.email || '').toLowerCase();
+      const matchesSearch = name.includes(query) || email.includes(query);
 
       if (!matchesSearch) return false;
       if (filterCriteria === 'all') return true;
-      if (filterCriteria === 'name') return tech.name.toLowerCase().includes(searchQuery.toLowerCase());
-      if (filterCriteria === 'email') return tech.email.toLowerCase().includes(searchQuery.toLowerCase());
-      if (filterCriteria === 'Active' || filterCriteria === 'Inactive') return tech.status === filterCriteria;
+      if (filterCriteria === 'name') return name.includes(query);
+      if (filterCriteria === 'email') return email.includes(query);
+      if (filterCriteria === 'Online') return tech.isOnline === true;
+      if (filterCriteria === 'Offline') return tech.isOnline === false;
 
       return true;
     });
@@ -60,12 +68,17 @@ export default function Technicians() {
     return filteredTechnicians.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredTechnicians, currentPage]);
 
-  const activeCount = useMemo(() => technicians.filter(t => t.status === 'Active').length, [technicians]);
-  const inActiveCount = useMemo(() => technicians.filter(t => t.status === 'Inactive').length, [technicians]);
-  const onTaskCount = useMemo(() => technicians.filter(t => t.assignmentStatus !== '').length, [technicians]);
+  const onlineCount = useMemo(() => technicians.filter(t => t.isOnline === true).length, [technicians]);
+  const offlineCount = useMemo(() => technicians.filter(t => t.isOnline === false).length, [technicians]);
 
-  const handleRemove = (id) => {
-    setTechnicians(prev => prev.filter(tech => tech.id !== id));
+  const handleRemove = async (id) => {
+    if (!window.confirm('Are you sure you want to deactivate this technician?')) return;
+    try {
+      await api.delete(`/users/${id}`);
+      setTechnicians(prev => prev.filter(tech => tech._id !== id));
+    } catch (err) {
+      console.error('Failed to deactivate technician:', err);
+    }
     setActiveMenuId(null);
   };
 
@@ -91,24 +104,17 @@ export default function Technicians() {
         </div>
         <div className="technicians-summary-card">
           <div>
-            <p className="technicians-summary-label">Active Technicians</p>
-            <h3 className="technicians-summary-value">{activeCount}</h3>
+            <p className="technicians-summary-label">Online Technicians</p>
+            <h3 className="technicians-summary-value">{onlineCount}</h3>
           </div>
           <span className="technicians-summary-icon-circle technicians-green-circle"><i className="far fa-check-circle"></i></span>
         </div>
         <div className="technicians-summary-card">
           <div>
-            <p className="technicians-summary-label">Inactive Technicians</p>
-            <h3 className="technicians-summary-value">{inActiveCount}</h3>
+            <p className="technicians-summary-label">Offline Technicians</p>
+            <h3 className="technicians-summary-value">{offlineCount}</h3>
           </div>
           <span className="technicians-summary-icon-circle technicians-green-circle"><i className="far fa-x-circle"></i></span>
-        </div>
-        <div className="technicians-summary-card">
-          <div>
-            <p className="technicians-summary-label">On Active Task</p>
-            <h3 className="technicians-summary-value">{onTaskCount}</h3>
-          </div>
-          <span className="technicians-summary-icon-circle technicians-gray-circle"><i className="far fa-clock"></i></span>
         </div>
       </section>
 
@@ -134,8 +140,8 @@ export default function Technicians() {
                 <option value="all">Filter: All Criteria</option>
                 <option value="name">Criteria: Name Only</option>
                 <option value="email">Criteria: Email Only</option>
-                <option value="Active">Status: Active</option>
-                <option value="Inactive">Status: Inactive</option>
+                <option value="Online">Status: Online</option>
+                <option value="Offline">Status: Offline</option>
               </select>
               <i className="fas fa-chevron-down technicians-select-arrow"></i>
             </div>
@@ -149,67 +155,62 @@ export default function Technicians() {
                 <th>TECHNICIAN</th>
                 <th>CONTACT DETAILS</th>
                 <th>STATUS</th>
-                <th>CURRENT ASSIGNMENT</th>
+                <th>LOCATION</th>
                 <th className="technicians-text-right">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {paginatedTechnicians.map((tech) => (
-                <tr key={tech.id}>
+                <tr key={tech._id}>
                   <td>
                     <div className="technicians-tech-profile-cell">
                       <div className="technicians-profile-image-circle">
                         <img
-                          src={Profile}
-                          alt={tech.name}
+                          src={tech.profilePicture || Profile}
+                          alt={fullName(tech)}
                           className="technicians-avatar-img"
                         />
                       </div>
                       <div>
-                        <p className="technicians-tech-name">{tech.name}</p>
-                        <p className="technicians-tech-id">ID: {tech.id}</p>
+                        <p className="technicians-tech-name">{fullName(tech)}</p>
+                        <p className="technicians-tech-id">ID: {tech._id.slice(-6).toUpperCase()}</p>
                       </div>
                     </div>
                   </td>
                   <td>
                     <div className="technicians-contact-details-cell">
                       <p><i className="far fa-envelope"></i> {tech.email}</p>
-                      <p><i className="fas fa-phone-alt"></i> {tech.phone}</p>
+                      <p><i className="fas fa-phone-alt"></i> {tech.phoneNumber}</p>
                     </div>
                   </td>
                   <td>
-                    <span className={`technicians-status-tag-badge technicians-status-${tech.status.toLowerCase()}`}>
-                      {tech.status}
+                    <span className={`technicians-status-tag-badge technicians-status-${tech.isOnline ? 'active' : 'inactive'}`}>
+                      {tech.isOnline ? 'Online' : 'Offline'}
                     </span>
                   </td>
                   <td>
                     <div className="technicians-assignment-cell">
                       <p className="technicians-assignment-title">
-                        {tech.assignment}{' '}
-                        {tech.assignmentStatus && <i className="fas fa-external-link-alt technicians-external-link"></i>}
+                        {tech.location?.latitude != null && tech.location?.longitude != null
+                          ? `${tech.location.latitude}, ${tech.location.longitude}`
+                          : 'No location'}
                       </p>
-                      {tech.assignmentStatus && (
-                        <p className="technicians-assignment-status-desc">
-                          <span className={`technicians-indicator-dot technicians-indicator-${tech.assignmentStatus.toLowerCase().replace(' ', '-')}`}></span>
-                          {tech.assignmentStatus}
-                        </p>
-                      )}
                     </div>
                   </td>
                   <td className="technicians-text-right technicians-position-relative">
                     <button
                       className="technicians-btn-actions-trigger"
-                      onClick={() => setActiveMenuId(activeMenuId === tech.id ? null : tech.id)}
+                      onClick={() => setActiveMenuId(activeMenuId === tech._id ? null : tech._id)}
                     >
                       <i className="fas fa-ellipsis-v"></i>
                     </button>
 
-                    {activeMenuId === tech.id && (
+                    {activeMenuId === tech._id && (
                       <div className="technicians-actions-fade-menu" ref={menuRef}>
                         <button className="technicians-menu-action-item" onClick={() => setActiveMenuId(null)}>
                           <i className="far fa-eye"></i> View Details
                         </button>
-                        <button className="technicians-menu-action-item technicians-remove" onClick={() => handleRemove(tech.id)}>
+                        <button className="technicians-menu-action-item technicians-remove" onClick={() => handleRemove(tech._id)}>
                           <i className="far fa-trash-alt"></i> Deactivate
                         </button>
                       </div>

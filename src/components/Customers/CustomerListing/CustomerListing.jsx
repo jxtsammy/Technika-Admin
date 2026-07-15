@@ -1,19 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import './CustomerListing.css';
-
-const GHANA_BANKS_DATA = [
-  { id: 1, name: 'GCB Bank', location: 'Accra Central', phone: '+233 30 266 4914', requests: 1500, dateAdded: '5 mins ago' },
-  { id: 2, name: 'Ecobank Ghana', location: 'Ridge, Accra', phone: '+233 30 221 3999', requests: 1200, dateAdded: '5 mins ago' },
-  { id: 3, name: 'Absa Bank Ghana', location: 'High Street, Accra', phone: '+233 30 266 6991', requests: 950, dateAdded: '5 mins ago' },
-  { id: 4, name: 'Stanbic Bank', location: 'Airport City, Accra', phone: '+233 30 281 5789', requests: 820, dateAdded: '5 mins ago' },
-  { id: 5, name: 'Fidelity Bank Ghana', location: 'Ridge Towers, Accra', phone: '+233 30 221 4490', requests: 610, dateAdded: '5 mins ago' },
-  { id: 6, name: 'Zenith Bank Ghana', location: 'Asylum Down, Accra', phone: '+233 30 223 0817', requests: 430, dateAdded: '5 mins ago' },
-  { id: 7, name: 'CalBank', location: 'Independence Ave, Accra', phone: '+233 30 268 0079', requests: 310, dateAdded: '5 mins ago' },
-  { id: 8, name: 'Societe Generale Ghana', location: 'Kokomlemle, Accra', phone: '+233 30 222 1573', requests: 215, dateAdded: '5 mins ago' },
-  { id: 9, name: 'Consolidated Bank Ghana (CBG)', location: 'Manet Towers, Accra', phone: '+233 30 221 6000', requests: 150, dateAdded: '5 mins ago' },
-  { id: 10, name: 'Agricultural Development Bank (ADB)', location: 'Ridge, Accra', phone: '+233 30 221 0210', requests: 95, dateAdded: '5 mins ago' },
-  { id: 11, name: 'National Investment Bank (NIB)', location: 'Accra Central', phone: '+233 30 266 1601', requests: 45, dateAdded: '5 mins ago' }
-];
+import api from '../../../api';
 
 export default function CustomerSection() {
   const [viewType, setViewType] = useState('list');
@@ -22,15 +9,64 @@ export default function CustomerSection() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 9;
 
+  const [customers, setCustomers] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({ name: '', location: '', phone: '' });
+  const [saving, setSaving] = useState(false);
+
+  const loadCustomers = async () => {
+    try {
+      const res = await api.get('/customers');
+      setCustomers(res.data || []);
+    } catch (err) {
+      console.error('Failed to load customers:', err);
+    }
+  };
+
+  useEffect(() => {
+    (async () => { await loadCustomers(); })();
+  }, []);
+
+  const handleAddCustomer = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api.post('/customers', {
+        name: newCustomer.name,
+        location: newCustomer.location,
+        phone: newCustomer.phone,
+      });
+      setShowModal(false);
+      setNewCustomer({ name: '', location: '', phone: '' });
+      await loadCustomers();
+    } catch (err) {
+      console.error('Failed to add customer:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteCustomer = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this customer?')) return;
+    try {
+      await api.delete(`/customers/${id}`);
+      setCustomers(prev => prev.filter(c => c._id !== id));
+    } catch (err) {
+      console.error('Failed to delete customer:', err);
+    }
+  };
+
   // Search & Filter Mapping
   const filteredCustomers = useMemo(() => {
-    return GHANA_BANKS_DATA.filter(bank => {
-      const matchesSearch = bank.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            bank.location.toLowerCase().includes(searchTerm.toLowerCase());
-      if (filterBy === 'accra') return matchesSearch && bank.location.includes('Accra');
+    return customers.filter(customer => {
+      const name = (customer.name || '').toLowerCase();
+      const location = (customer.location || '').toLowerCase();
+      const matchesSearch = name.includes(searchTerm.toLowerCase()) ||
+                            location.includes(searchTerm.toLowerCase());
+      if (filterBy === 'accra') return matchesSearch && (customer.location || '').includes('Accra');
       return matchesSearch;
     });
-  }, [searchTerm, filterBy]);
+  }, [customers, searchTerm, filterBy]);
 
   const totalItems = filteredCustomers.length;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -45,11 +81,14 @@ export default function CustomerSection() {
       <div className="tabs-row">
         <div className="left-tabs">
           <div className="tab-item active">
-            Customers <span className="badge-count active-badge">1500</span>
+            Customers <span className="badge-count active-badge">{customers.length}</span>
           </div>
         </div>
         <div className="right-stats">
-          Showing {totalItems === 0 ? 0 : startIndex + 1} - {endIndex} of 1500 results
+          Showing {totalItems === 0 ? 0 : startIndex + 1} - {endIndex} of {customers.length} results
+          <button className="filter-trigger-btn" onClick={() => setShowModal(true)} style={{ marginLeft: '12px' }}>
+            <i className="fa-solid fa-plus"></i> Add Customer
+          </button>
         </div>
       </div>
 
@@ -112,23 +151,27 @@ export default function CustomerSection() {
                 <th style={{ width: '30%' }}>Name</th>
                 <th style={{ width: '25%' }}>Location</th>
                 <th style={{ width: '20%' }}>Phone Number</th>
-                <th style={{ width: '15%' }}>Request</th>
-                <th style={{ width: '10%' }}>Date Added</th>
+                <th style={{ width: '15%' }}>Date Added</th>
+                <th style={{ width: '10%' }}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {currentData.map((bank) => (
-                <tr key={bank.id} className="table-data-row">
+              {currentData.map((customer) => (
+                <tr key={customer._id} className="table-data-row">
                   <td className="identity-cell-profile">
                     <span className="circular-bank-avatar">
                       <i className="fa-solid fa-building-columns"></i>
                     </span>
-                    <span className="primary-identity-text">{bank.name}</span>
+                    <span className="primary-identity-text">{customer.name}</span>
                   </td>
-                  <td className="muted-table-cell">{bank.location}</td>
-                  <td className="muted-table-cell">{bank.phone}</td>
-                  <td className="muted-table-cell">Request {bank.id}</td>
-                  <td className="muted-table-cell">{bank.dateAdded}</td>
+                  <td className="muted-table-cell">{customer.location}</td>
+                  <td className="muted-table-cell">{customer.phone}</td>
+                  <td className="muted-table-cell">{customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : ''}</td>
+                  <td className="muted-table-cell">
+                    <button className="filter-trigger-btn" onClick={() => handleDeleteCustomer(customer._id)}>
+                      <i className="fa-solid fa-trash"></i>
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -138,19 +181,21 @@ export default function CustomerSection() {
 
         /* --- CATCHY TILES VIEW STRUCTURE --- */
         <div className="dashboard-tiles-layout">
-          {currentData.map((bank) => (
-            <div key={bank.id} className="grid-card-item">
+          {currentData.map((customer) => (
+            <div key={customer._id} className="grid-card-item">
               <div className="grid-card-header">
                 <span className="circular-bank-avatar">
                   <i className="fa-solid fa-building-columns"></i>
                 </span>
-                <span className="card-request-tag">Request {bank.id}</span>
+                <button className="card-request-tag" onClick={() => handleDeleteCustomer(customer._id)}>
+                  <i className="fa-solid fa-trash"></i> Delete
+                </button>
               </div>
-              <h3 className="card-title-heading">{bank.name}</h3>
+              <h3 className="card-title-heading">{customer.name}</h3>
               <div className="card-metadata-lines">
-                <p><i className="fa-solid fa-location-dot"></i> {bank.location}</p>
-                <p><i className="fa-solid fa-phone"></i> {bank.phone}</p>
-                <p><i className="fa-solid fa-clock"></i> {bank.dateAdded}</p>
+                <p><i className="fa-solid fa-location-dot"></i> {customer.location}</p>
+                <p><i className="fa-solid fa-phone"></i> {customer.phone}</p>
+                <p><i className="fa-solid fa-clock"></i> {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : ''}</p>
               </div>
             </div>
           ))}
@@ -169,6 +214,64 @@ export default function CustomerSection() {
               {idx + 1}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Add Customer Modal */}
+      {showModal && (
+        <div
+          className="customer-modal-overlay"
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          }}
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="customer-modal-box"
+            style={{ background: '#fff', padding: '24px', borderRadius: '12px', width: '360px', maxWidth: '90%' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0 }}>Add Customer</h3>
+            <form onSubmit={handleAddCustomer}>
+              <div className="form-input-wrapper" style={{ marginBottom: '12px' }}>
+                <label>Name</label>
+                <input
+                  type="text"
+                  value={newCustomer.name}
+                  onChange={(e) => setNewCustomer(prev => ({ ...prev, name: e.target.value }))}
+                  required
+                  style={{ width: '100%', padding: '8px' }}
+                />
+              </div>
+              <div className="form-input-wrapper" style={{ marginBottom: '12px' }}>
+                <label>Location</label>
+                <input
+                  type="text"
+                  value={newCustomer.location}
+                  onChange={(e) => setNewCustomer(prev => ({ ...prev, location: e.target.value }))}
+                  required
+                  style={{ width: '100%', padding: '8px' }}
+                />
+              </div>
+              <div className="form-input-wrapper" style={{ marginBottom: '16px' }}>
+                <label>Phone</label>
+                <input
+                  type="text"
+                  value={newCustomer.phone}
+                  onChange={(e) => setNewCustomer(prev => ({ ...prev, phone: e.target.value }))}
+                  required
+                  style={{ width: '100%', padding: '8px' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <button type="button" className="filter-trigger-btn" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="submit" className="filter-trigger-btn" disabled={saving}>
+                  {saving ? 'Saving...' : 'Add Customer'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

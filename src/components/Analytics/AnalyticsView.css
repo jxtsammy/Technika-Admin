@@ -452,3 +452,8 @@
   padding: 6px 14px;
   border-radius: 8px;
 }
+.badge-in-progress { background: #eff6ff; color: #2563eb; }
+.badge-in-progress .status-bullet-dot { background: #2563eb; }
+
+.badge-pending { background: #fffbeb; color: #d97706; }
+.badge-pending .status-bullet-dot { background: #d97706; }

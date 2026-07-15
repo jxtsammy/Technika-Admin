@@ -1,14 +1,19 @@
-import { useState, useMemo,  } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import './Tasks.css';
 import Profile from '../../assets/profile.png'
+import api from '../../api';
 
-const INITIAL_QUEUE = [
-  { id: 'T-901', title: 'Emergency Generator Repair', location: 'North Wing Data Center', priority: 'High', status: 'Dispatched', techName: 'Marcus Chen', role: 'Senior HVAC Tech', timeValue: 10, timeString: '10 mins ago', avatar: 'https://via.placeholder.com/40' },
-  { id: 'T-902', title: 'Routine AC Maintenance', location: 'Building B, Floor 4', priority: 'Low', status: 'Pending', techName: 'David Rivera', role: 'Plumbing Lead', timeValue: 25, timeString: '25 mins ago', avatar: 'https://via.placeholder.com/40' },
-  { id: 'T-903', title: 'Faulty Wiring Investigation', location: 'Central Lobby', priority: 'Medium', status: 'In Progress', techName: 'Sarah Jenkins', role: 'Electrical Specialist', timeValue: 60, timeString: '1 hour ago', avatar: 'https://via.placeholder.com/40' },
-  { id: 'T-904', title: 'Leakage Detection', location: 'Warehousing Complex', priority: 'High', status: 'Dispatched', techName: 'David Rivera', role: 'Plumbing Lead', timeValue: 120, timeString: '2 hours ago', avatar: 'https://via.placeholder.com/40' },
-  { id: 'T-905', title: 'Fiber Optic Installation', location: 'Server Room', priority: 'Medium', status: 'In Progress', techName: 'Marcus Chen', role: 'Senior HVAC Tech', timeValue: 1, timeString: '1 min ago', avatar: 'https://via.placeholder.com/40' }
-];
+// Maps the priority select label to the backend value
+const PRIORITY_MAP = {
+  'Low - Routine': 'low',
+  'Medium - Standard': 'medium',
+  'High - Urgent': 'high',
+};
+
+const technicianName = (assignedTo) =>
+  assignedTo && (assignedTo.firstName || assignedTo.lastName)
+    ? `${assignedTo.firstName || ''} ${assignedTo.lastName || ''}`.trim()
+    : 'Unassigned';
 
 export default function AssignTask() {
   // Form State
@@ -19,26 +24,73 @@ export default function AssignTask() {
   const [priority, setPriority] = useState('Medium - Standard');
   const [assignedTech, setAssignedTech] = useState('');
 
-  // Dispatch Filter State
+  // Data State
+  const [technicians, setTechnicians] = useState([]);
+  const [queue, setQueue] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Status Filter State
   const [dispatchFilter, setDispatchFilter] = useState('all');
 
-  // Filter logic based on the user-requested intervals
-  const filteredQueue = useMemo(() => {
-    return INITIAL_QUEUE.filter(item => {
-      if (dispatchFilter === 'all') return true;
-      if (dispatchFilter === '1') return item.timeValue === 1;
-      if (dispatchFilter === '10') return item.timeValue <= 10;
-      if (dispatchFilter === '20') return item.timeValue <= 20;
-      if (dispatchFilter === '30') return item.timeValue <= 30;
-      if (dispatchFilter === '60') return item.timeValue === 60;
-      if (dispatchFilter === 'earlier') return item.timeValue > 60;
-      return true;
-    });
-  }, [dispatchFilter]);
+  const loadTechnicians = async () => {
+    try {
+      const res = await api.get('/users/technicians');
+      setTechnicians(res.data || []);
+    } catch (err) {
+      console.error('Failed to load technicians:', err);
+    }
+  };
 
-  const handleAssignTask = (e) => {
+  const loadQueue = async () => {
+    try {
+      const res = await api.get('/tasks');
+      setQueue((res.data || []).slice(0, 10));
+    } catch (err) {
+      console.error('Failed to load task queue:', err);
+    }
+  };
+
+  useEffect(() => {
+    (async () => { await Promise.all([loadTechnicians(), loadQueue()]); })();
+  }, []);
+
+  // Filter the queue by backend status
+  const filteredQueue = useMemo(() => {
+    return queue.filter((item) => {
+      if (dispatchFilter === 'all') return true;
+      return item.status === dispatchFilter;
+    });
+  }, [queue, dispatchFilter]);
+
+  const handleAssignTask = async (e) => {
     e.preventDefault();
-    alert(`Task "${taskTitle}" assigned successfully!`);
+    setSubmitting(true);
+    try {
+      const payload = {
+        title: taskTitle,
+        description,
+        priority: PRIORITY_MAP[priority] || 'medium',
+        location: { address: location },
+      };
+      if (assignedTech) payload.assignedTo = assignedTech;
+
+      await api.post('/tasks', payload);
+      alert(`Task "${taskTitle}" assigned successfully!`);
+
+      setTaskTitle('');
+      setDescription('');
+      setLocation('');
+      setDeadline('');
+      setPriority('Medium - Standard');
+      setAssignedTech('');
+
+      await loadQueue();
+    } catch (err) {
+      console.error('Failed to assign task:', err);
+      alert('Failed to assign task. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -54,19 +106,16 @@ export default function AssignTask() {
         {/* Custom Interactive Dropdown for Last Dispatch Filter */}
         <div className="dispatch-filter-select-container">
           <i className="far fa-clock clock-dispatch-icon"></i>
-          <span className="dispatch-label-prefix">Last dispatch: </span>
+          <span className="dispatch-label-prefix">Status: </span>
           <select
             value={dispatchFilter}
             onChange={(e) => setDispatchFilter(e.target.value)}
             className="dispatch-native-select"
           >
-            <option value="all">All Activities</option>
-            <option value="1">1 min ago</option>
-            <option value="10">10 mins ago</option>
-            <option value="20">20 mins ago</option>
-            <option value="30">30 mins ago</option>
-            <option value="60">1 hr ago</option>
-            <option value="earlier">Earlier</option>
+            <option value="all">All</option>
+            <option value="available">available</option>
+            <option value="pending">pending</option>
+            <option value="completed">completed</option>
           </select>
           <i className="fas fa-chevron-down select-arrow-dispatch"></i>
         </div>
@@ -151,9 +200,11 @@ export default function AssignTask() {
                 <div className="relative-input-icon-wrapper">
                   <select value={assignedTech} onChange={(e) => setAssignedTech(e.target.value)}>
                     <option value="">Search available techs...</option>
-                    <option value="Marcus Chen">Marcus Chen (Senior HVAC Tech)</option>
-                    <option value="David Rivera">David Rivera (Plumbing Lead)</option>
-                    <option value="Sarah Jenkins">Sarah Jenkins (Electrical Specialist)</option>
+                    {technicians.map((tech) => (
+                      <option key={tech._id} value={tech._id}>
+                        {tech.firstName} {tech.lastName}
+                      </option>
+                    ))}
                   </select>
                   <i className="fas fa-chevron-down custom-select-caret"></i>
                 </div>
@@ -167,7 +218,7 @@ export default function AssignTask() {
               </p>
               <div className="submission-button-actions-cluster">
                 <button type="button" className="btn-action-dismiss-draft">Save as Draft</button>
-                <button type="submit" className="btn-action-submit-dispatch"><i className="fas fa-paper-plane"></i> Assign Task</button>
+                <button type="submit" className="btn-action-submit-dispatch" disabled={submitting}><i className="fas fa-paper-plane"></i> {submitting ? 'Assigning...' : 'Assign Task'}</button>
               </div>
             </div>
           </form>
@@ -195,25 +246,25 @@ export default function AssignTask() {
 
             <div className="queue-items-scroller-stack">
               {filteredQueue.map((item) => (
-                <div className="queue-individual-item-block" key={item.id}>
+                <div className="queue-individual-item-block" key={item._id}>
                   <div className="queue-item-meta-top-row">
-                    <span className="queue-item-id-tag">{item.id}</span>
-                    <span className={`status-badge-pill status-${item.status.toLowerCase().replace(' ', '-')}`}>{item.status}</span>
-                    <span className={`priority-indicator-flag priority-${item.priority.toLowerCase()}`}>{item.priority}</span>
+                    <span className="queue-item-id-tag">{item._id.slice(-6).toUpperCase()}</span>
+                    <span className={`status-badge-pill status-${(item.status || '').toLowerCase().replace(' ', '-')}`}>{item.status}</span>
+                    <span className={`priority-indicator-flag priority-${(item.priority || '').toLowerCase()}`}>{item.priority}</span>
                   </div>
 
                   <h4 className="queue-item-main-title">{item.title}</h4>
-                  <p className="queue-item-location-desc"><i className="fas fa-map-marker-alt"></i> {item.location}</p>
+                  <p className="queue-item-location-desc"><i className="fas fa-map-marker-alt"></i> {item.location?.address}</p>
 
                   <div className="queue-item-technician-footer">
                     <div className="tech-assigned-profile-mini">
-                      <img src={Profile} alt={item.techName} className="tech-avatar-circle" />
+                      <img src={Profile} alt={technicianName(item.assignedTo)} className="tech-avatar-circle" />
                       <div>
-                        <p className="tech-profile-name">{item.techName}</p>
-                        <p className="tech-profile-role">{item.role}</p>
+                        <p className="tech-profile-name">{technicianName(item.assignedTo)}</p>
+                        <p className="tech-profile-role">Technician</p>
                       </div>
                     </div>
-                    <span className="tech-dispatch-timestamp-text"><i className="far fa-clock"></i> {item.timeString}</span>
+                    <span className="tech-dispatch-timestamp-text"><i className="far fa-clock"></i> {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ''}</span>
                   </div>
                 </div>
               ))}

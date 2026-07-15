@@ -1,18 +1,118 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './AdminDashboard.css';
+import api from '../../api';
+
+// Maps backend task status to a display label + badge class
+const STATUS_DISPLAY = {
+  available: { text: 'Pending', statusClass: 'progress-bg' },
+  pending: { text: 'In Progress', statusClass: 'progress-bg' },
+  completed: { text: 'Completed', statusClass: 'completed-bg' },
+};
+
+const technicianName = (assignedTo) =>
+  assignedTo && (assignedTo.firstName || assignedTo.lastName)
+    ? `${assignedTo.firstName || ''} ${assignedTo.lastName || ''}`.trim()
+    : 'Unassigned';
 
 export default function Dashboard() {
   const [filter, setFilter] = useState('24h');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const activities = [
-    { id: 1, name: 'Marcus Thorne', action: 'completed', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&fit=crop&auto=format&q=80', statusText: 'Completed', statusClass: 'completed-bg', task: 'HVAC System Diagnostic - Unit #402', time: '12 mins ago' },
-    { id: 2, name: 'Elena Rodriguez', action: 'started', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop&auto=format&q=80', statusText: 'In Progress', statusClass: 'progress-bg', task: 'Optical Fiber Splicing - Sector 7', time: '45 mins ago' },
-    { id: 3, name: 'David Chen', action: 'reported an issue', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&fit=crop&auto=format&q=80', statusText: 'Alert', statusClass: 'alert-bg', task: 'Main Panel Replacement - Building B', time: '1 hour ago' },
-    { id: 4, name: 'Sarah Jenkins', action: 'arrived at location', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&fit=crop&auto=format&q=80', statusText: 'Arrived', statusClass: 'arrived-bg', task: 'Security Camera Installation - Parking Lot', time: '2 hours ago' },
-    { id: 5, name: 'James Wilson', action: 'updated progress (75%)', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&fit=crop&auto=format&q=80', statusText: 'In Progress', statusClass: 'progress-bg', task: 'Emergency Generator Repair', time: '3 hours ago' },
-    { id: 6, name: 'Alex Martinez', action: 'completed', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&fit=crop&auto=format&q=80', statusText: 'Completed', statusClass: 'completed-bg', task: 'Router Configuration - Server Room C', time: '4 hours ago' }
-  ];
+  const [technicians, setTechnicians] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [metrics, setMetrics] = useState({
+    totalTechnicians: 0,
+    available: 0,
+    pending: 0,
+    completed: 0,
+    totalTasks: 0,
+  });
+  const [form, setForm] = useState({ title: '', location: '', assignedTo: '' });
+  const [submitting, setSubmitting] = useState(false);
+
+  const loadData = async () => {
+    try {
+      const [statsRes, techRes, tasksRes] = await Promise.all([
+        api.get('/tasks/stats'),
+        api.get('/users/technicians'),
+        api.get('/tasks'),
+      ]);
+
+      const techList = techRes.data || [];
+      const taskList = tasksRes.data || [];
+      const stats = statsRes.data || {};
+
+      const available =
+        stats.available ?? taskList.filter((t) => t.status === 'available').length;
+      const pending =
+        stats.pending ?? taskList.filter((t) => t.status === 'pending').length;
+      const completed =
+        stats.completed ?? taskList.filter((t) => t.status === 'completed').length;
+
+      setTechnicians(techList);
+      setTasks(taskList);
+      setMetrics({
+        totalTechnicians: techList.length,
+        available,
+        pending,
+        completed,
+        totalTasks: available + pending + completed,
+      });
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+    }
+  };
+
+  useEffect(() => {
+    (async () => { await loadData(); })();
+  }, []);
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateTask = async () => {
+    if (!form.title.trim()) return;
+    setSubmitting(true);
+    try {
+      const payload = {
+        title: form.title,
+        description: form.location,
+        priority: 'medium',
+      };
+      if (form.assignedTo) payload.assignedTo = form.assignedTo;
+
+      await api.post('/tasks', payload);
+      setForm({ title: '', location: '', assignedTo: '' });
+      await loadData();
+    } catch (err) {
+      console.error('Failed to create task:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // 6 most recent tasks for the activity feed
+  const recentActivities = tasks.slice(0, 6).map((task) => {
+    const display = STATUS_DISPLAY[task.status] || {
+      text: task.status,
+      statusClass: 'progress-bg',
+    };
+    return {
+      id: task._id,
+      name: technicianName(task.assignedTo),
+      task: task.title,
+      statusText: display.text,
+      statusClass: display.statusClass,
+      time: task.createdAt ? new Date(task.createdAt).toLocaleDateString() : '',
+    };
+  });
+
+  const completionRate =
+    metrics.totalTasks > 0
+      ? Math.round((metrics.completed / metrics.totalTasks) * 100)
+      : 0;
 
   return (
     <div className="dashboard-container">
@@ -24,7 +124,7 @@ export default function Dashboard() {
             <span className="metric-trend trend-up">+3 this month</span>
           </div>
           <p className="metric-label">Total Technicians</p>
-          <h2 className="metric-value">42</h2>
+          <h2 className="metric-value">{metrics.totalTechnicians}</h2>
         </div>
 
         <div className="metric-card">
@@ -33,7 +133,7 @@ export default function Dashboard() {
             <span className="metric-trend trend-up">+12% vs last week</span>
           </div>
           <p className="metric-label">Total Tasks</p>
-          <h2 className="metric-value">1,284</h2>
+          <h2 className="metric-value">{metrics.totalTasks}</h2>
         </div>
 
         <div className="metric-card">
@@ -42,7 +142,7 @@ export default function Dashboard() {
             <span className="metric-trend trend-down">-2 since 8 AM</span>
           </div>
           <p className="metric-label">In Progress</p>
-          <h2 className="metric-value">18</h2>
+          <h2 className="metric-value">{metrics.pending}</h2>
         </div>
 
         <div className="metric-card">
@@ -51,7 +151,7 @@ export default function Dashboard() {
             <span className="metric-trend trend-up">+8 over target</span>
           </div>
           <p className="metric-label">Completed Today</p>
-          <h2 className="metric-value">24</h2>
+          <h2 className="metric-value">{metrics.completed}</h2>
         </div>
 
         <div className="metric-card">
@@ -60,7 +160,7 @@ export default function Dashboard() {
             <span className="status-badge alert-bg">Urgent Attention</span>
           </div>
           <p className="metric-label">Pending Assignment</p>
-          <h2 className="metric-value">7</h2>
+          <h2 className="metric-value">{metrics.available}</h2>
         </div>
       </header>
 
@@ -85,11 +185,11 @@ export default function Dashboard() {
 
           {/* Scrollable Container */}
           <div className="activity-list scrollable-list">
-            {activities.map((item) => (
+            {recentActivities.map((item) => (
               <div className="activity-item" key={item.id}>
-                <img src={item.avatar} alt={item.name} className="avatar" />
+                <img src="https://ui-avatars.com/api/?name=Tech&background=random" alt={item.name} className="avatar" />
                 <div className="activity-details">
-                  <p><strong>{item.name}</strong> {item.action}</p>
+                  <p><strong>{item.name}</strong></p>
                   <p className="task-desc">
                     <span className={`status-badge ${item.statusClass}`}>{item.statusText}</span>
                     Task: {item.task}
@@ -145,25 +245,44 @@ export default function Dashboard() {
 
             <div className="form-group">
               <label>Task Subject</label>
-              <input type="text" placeholder="e.g. Server Maintenance" />
+              <input
+                type="text"
+                name="title"
+                placeholder="e.g. Server Maintenance"
+                value={form.title}
+                onChange={handleFormChange}
+              />
             </div>
 
             <div className="form-group">
               <label>Location</label>
-              <input type="text" placeholder="e.g. Building B, Floor 3" />
+              <input
+                type="text"
+                name="location"
+                placeholder="e.g. Building B, Floor 3"
+                value={form.location}
+                onChange={handleFormChange}
+              />
             </div>
 
             <div className="form-group">
               <label>Technician</label>
               <div className="select-wrapper">
-                <select defaultValue="">
-                  <option value="" disabled>Select available...</option>
+                <select name="assignedTo" value={form.assignedTo} onChange={handleFormChange}>
+                  <option value="">Select available...</option>
+                  {technicians.map((tech) => (
+                    <option key={tech._id} value={tech._id}>
+                      {tech.firstName} {tech.lastName}
+                    </option>
+                  ))}
                 </select>
                 <i className="fas fa-chevron-down select-arrow"></i>
               </div>
             </div>
 
-            <button className="btn-primary"><i className="fas fa-plus"></i> Create Task</button>
+            <button className="btn-primary" onClick={handleCreateTask} disabled={submitting}>
+              <i className="fas fa-plus"></i> {submitting ? 'Creating...' : 'Create Task'}
+            </button>
           </div>
 
           {/* Weekly Progress Widget */}
@@ -171,15 +290,15 @@ export default function Dashboard() {
             <div className="progress-header">
               <div>
                 <h5>Weekly Goal Progress</h5>
-                <h2 className="progress-percentage">82%</h2>
+                <h2 className="progress-percentage">{completionRate}%</h2>
               </div>
               <div className="progress-stats">
                 <i className="fas fa-chart-bar font-large"></i>
-                <span>342/410 Tasks</span>
+                <span>{metrics.completed}/{metrics.totalTasks} Tasks</span>
               </div>
             </div>
             <div className="progress-bar-container">
-              <div className="progress-bar-fill" style={{ width: '82%' }}></div>
+              <div className="progress-bar-fill" style={{ width: `${completionRate}%` }}></div>
             </div>
             <a href="#audit" className="audit-link">Audit Reports <i className="fas fa-arrow-right"></i></a>
           </div>

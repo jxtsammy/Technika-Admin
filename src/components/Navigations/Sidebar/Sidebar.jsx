@@ -2,6 +2,14 @@ import { useEffect } from 'react';
 import './Sidebar.css';
 
 const SidebarNavigation = ({ isExpanded, setIsExpanded, activeTab, setActiveTab }) => {
+  let adminUser;
+  try {
+    adminUser = JSON.parse(localStorage.getItem('adminUser')) || {};
+  } catch {
+    adminUser = {};
+  }
+  const adminName = `${adminUser.firstName || ''} ${adminUser.lastName || ''}`.trim() || 'Administrator';
+  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=random`;
 
   // Update the browser document title whenever activeTab changes
   useEffect(() => {
@@ -26,12 +34,12 @@ const SidebarNavigation = ({ isExpanded, setIsExpanded, activeTab, setActiveTab 
           <div className="user-profile-wrapper">
             <div className="profile-info-block">
               <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
-                alt="Anna George"
+                src={avatarUrl}
+                alt={adminName}
                 className="avatar-img"
               />
               <div className="text-meta">
-                <span className="user-name">Anna George</span>
+                <span className="user-name">{adminName}</span>
                 <span className="user-role">Administrator</span>
               </div>
             </div>
