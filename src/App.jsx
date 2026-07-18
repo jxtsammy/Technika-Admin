@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // Importing your components and screens
 import Login from './components/Login/Login';
 import AdminLayout from './Layout/AdminLayout'; // Import the layout wrapper
+import ForgotPassword from './components/ForgotPassword/ForgotPassword';
 
 function App() {
   return (
@@ -20,6 +21,12 @@ function App() {
           path="/"
           element={
             <Login />
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <ForgotPassword />
           }
         />
       </Routes>

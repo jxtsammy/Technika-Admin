@@ -1,16 +1,26 @@
-import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const formRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isLoading) return;
+
+    setIsLoading(true);
     console.log({ email, password, rememberMe });
+
+    // Simulating authentication delay before navigating
+    setTimeout(() => {
+      setIsLoading(false);
+      navigate('/admin');
+    }, 1500);
   };
 
   return (
@@ -19,7 +29,7 @@ export default function LoginScreen() {
       {/* Left Side: Marketing/Info Panel */}
       <div className="info-panel">
         <div className="info-content">
-          <h1>Coordinate Teams track progress, and<br /> maintain seamless efficiency.</h1>
+          <h1>Coordinate Teams track progress, and maintain seamless efficiency.</h1>
           <p>
             Streamline operations with a centralized workspace designed to
             monitor technician activities, assign and track tasks, and efficiently manage the onboarding of technicians and customers.
@@ -35,7 +45,7 @@ export default function LoginScreen() {
             <p>Sign in to your Administrator Account</p>
           </div>
 
-          <form ref={formRef} className="login-form" onSubmit={handleSubmit}>
+          <form className="login-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="email">Email address</label>
               <input
@@ -44,6 +54,8 @@ export default function LoginScreen() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
+                required
+                disabled={isLoading}
               />
             </div>
 
@@ -58,6 +70,8 @@ export default function LoginScreen() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                required
+                disabled={isLoading}
               />
             </div>
 
@@ -67,20 +81,22 @@ export default function LoginScreen() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isLoading}
               />
               <label htmlFor="remember">Keep me signed in</label>
             </div>
 
-            <Link
-              to="/admin"
-              className="submit-btn"
-              onClick={(e) => {
-                e.preventDefault();
-                formRef.current?.requestSubmit();
-              }}
+            <button
+              type="submit"
+              className={`submit-btn ${isLoading ? 'loading' : ''}`}
+              disabled={isLoading}
             >
-              Sign in to Dashboard
-            </Link>
+              {isLoading ? (
+                <div className="spinner"></div>
+              ) : (
+                'Sign in to Dashboard'
+              )}
+            </button>
           </form>
         </div>
       </div>
