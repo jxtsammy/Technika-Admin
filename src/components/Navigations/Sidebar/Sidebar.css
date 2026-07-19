@@ -16,7 +16,7 @@
 
 /* Strict sizing and perfect centering for contracted state */
 .sidebar-container.contracted {
-  width: 72px;
+  width: 80px;
   align-items: center;
   padding: 20px 0;
 }

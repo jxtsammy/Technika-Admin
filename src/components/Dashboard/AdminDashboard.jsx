@@ -1,190 +1,228 @@
-import { useState } from 'react';
+
 import './AdminDashboard.css';
 
-export default function Dashboard() {
-  const [filter, setFilter] = useState('24h');
-  const [currentPage, setCurrentPage] = useState(1);
+export default function Dashboard({ onNavigate }) {
+  // Hardcoded date based on system state: Sunday, July 19, 2026
+  const currentDayNameShort = 'Sun';
+  const currentDayLong = 'Sunday';
+  const currentDayAndMonth = '19 July';
+  const currentTimeString = '01:19:28';
 
-  const activities = [
-    { id: 1, name: 'Marcus Thorne', action: 'completed', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&fit=crop&auto=format&q=80', statusText: 'Completed', statusClass: 'completed-bg', task: 'HVAC System Diagnostic - Unit #402', time: '12 mins ago' },
-    { id: 2, name: 'Elena Rodriguez', action: 'started', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop&auto=format&q=80', statusText: 'In Progress', statusClass: 'progress-bg', task: 'Optical Fiber Splicing - Sector 7', time: '45 mins ago' },
-    { id: 3, name: 'David Chen', action: 'reported an issue', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&fit=crop&auto=format&q=80', statusText: 'Alert', statusClass: 'alert-bg', task: 'Main Panel Replacement - Building B', time: '1 hour ago' },
-    { id: 4, name: 'Sarah Jenkins', action: 'arrived at location', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&fit=crop&auto=format&q=80', statusText: 'Arrived', statusClass: 'arrived-bg', task: 'Security Camera Installation - Parking Lot', time: '2 hours ago' },
-    { id: 5, name: 'James Wilson', action: 'updated progress (75%)', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&fit=crop&auto=format&q=80', statusText: 'In Progress', statusClass: 'progress-bg', task: 'Emergency Generator Repair', time: '3 hours ago' },
-    { id: 6, name: 'Alex Martinez', action: 'completed', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&fit=crop&auto=format&q=80', statusText: 'Completed', statusClass: 'completed-bg', task: 'Router Configuration - Server Room C', time: '4 hours ago' }
+  const analyticsData = [
+    { day: 'S', type: 'striped' },
+    { day: 'M', type: 'solid-green' },
+    { day: 'T', type: 'active-mint', label: '74%' },
+    { day: 'W', type: 'dark-green' },
+    { day: 'T', type: 'striped' },
+    { day: 'F', type: 'striped' },
+    { day: 'S', type: 'striped' }
+  ];
+
+  const activeTechnicians = [
+    { name: 'Kwame Mensah', task: 'Repairing main generator unit at Downtown Hub A', initial: 'KM', color: '#f87171' },
+    { name: 'Ama Osei', task: 'Deploying security credentials layer onto core switch', initial: 'AO', color: '#4ade80' },
+    { name: 'Kofi Boateng', task: 'Calibrating backup transceiver nodes', initial: 'KB', color: '#60a5fa' },
+    { name: 'Abena Asare', task: 'Running responsive diagnostic protocols', initial: 'AA', color: '#fb923c' }
+  ];
+
+  const activeTasks = [
+    { tech: 'Kwame Mensah', task: 'Generator Calibration', initial: 'KM', color: '#f87171' },
+    { tech: 'Ama Osei', task: 'Security Authentication Update', initial: 'AO', color: '#4ade80' },
+    { tech: 'Kofi Boateng', task: 'Transceiver Diagnostic Hub', initial: 'KB', color: '#60a5fa' }
+  ];
+
+  const sidebarProjects = [
+    { name: 'Develop API Endpoints', date: 'Nov 26, 2024', color: '#3b82f6', icon: '⚡' },
+    { name: 'Onboarding Flow', date: 'Nov 28, 2024', color: '#0d9488', icon: '💠' },
+    { name: 'Build Dashboard', date: 'Nov 30, 2024', color: '#a855f7', icon: '✢' },
+    { name: 'Optimize Page Load', date: 'Dec 5, 2024', color: '#eab308', icon: '📐' },
+    { name: 'Cross-Browser Testing', date: 'Dec 6, 2024', color: '#ec4899', icon: '🔮' }
   ];
 
   return (
-    <div className="dashboard-container">
-      {/* Top Metrics Row */}
-      <header className="metrics-grid">
-        <div className="metric-card">
-          <div className="metric-header">
-            <span className="icon-circle technicians-bg"><i className="fas fa-users"></i></span>
-            <span className="metric-trend trend-up">+3 this month</span>
-          </div>
-          <p className="metric-label">Total Technicians</p>
-          <h2 className="metric-value">42</h2>
-        </div>
+    <div className="exact-dashboard-wrapper">
 
-        <div className="metric-card">
-          <div className="metric-header">
-            <span className="icon-circle tasks-bg"><i className="fas fa-clipboard-check"></i></span>
-            <span className="metric-trend trend-up">+12% vs last week</span>
-          </div>
-          <p className="metric-label">Total Tasks</p>
-          <h2 className="metric-value">1,284</h2>
+      {/* Top Header Row */}
+      <header className="exact-header">
+        <div className="header-title-block">
+          <h1>Dashboard</h1>
+          <p>Plan, prioritize, and accomplish your tasks with ease.</p>
         </div>
-
-        <div className="metric-card">
-          <div className="metric-header">
-            <span className="icon-circle progress-circle-bg"><i className="far fa-clock"></i></span>
-            <span className="metric-trend trend-down">-2 since 8 AM</span>
-          </div>
-          <p className="metric-label">In Progress</p>
-          <h2 className="metric-value">18</h2>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-header">
-            <span className="icon-circle completed-circle-bg"><i className="far fa-check-circle"></i></span>
-            <span className="metric-trend trend-up">+8 over target</span>
-          </div>
-          <p className="metric-label">Completed Today</p>
-          <h2 className="metric-value">24</h2>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-header">
-            <span className="icon-circle pending-bg"><i className="fas fa-exclamation-circle"></i></span>
-            <span className="status-badge alert-bg">Urgent Attention</span>
-          </div>
-          <p className="metric-label">Pending Assignment</p>
-          <h2 className="metric-value">7</h2>
+        <div className="header-actions-block">
+          {/* Functional tab switching placeholders using the layout controls */}
+          <button className="btn-add-project" onClick={() => onNavigate?.('map-tracking')}>
+            Map Tracking
+          </button>
+          <button className="btn-import-data" onClick={() => onNavigate?.('tasks')}>
+            Tasks
+          </button>
         </div>
       </header>
 
-      {/* Main Dashboard Body */}
-      <main className="main-content-grid">
-        {/* Left: Recent Field Activity */}
-        <section className="activity-section">
-          <div className="section-header">
-            <h3>Recent Field Activity</h3>
-            <div className="header-actions">
-              <div className="select-wrapper filter-select">
-                <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-                  <option value="24h">Last 24 Hours</option>
-                  <option value="7d">Last 7 Days</option>
-                  <option value="30d">Last 30 Days</option>
-                </select>
-                <i className="fas fa-chevron-down select-arrow"></i>
+      {/* Primary Layout Grid */}
+      <div className="exact-grid-layout">
+
+        {/* Left Segment Flow */}
+        <div className="left-content-segment">
+
+          {/* Top Row: 4 Metric Cards */}
+          <div className="exact-metrics-row">
+            <div className="m-card focus-green">
+              <div className="m-card-header">
+                <span className="m-title">Total Projects</span>
+                <span className="m-arrow">↗</span>
               </div>
-              <a href="#view-all" className="link-text">View All Activity</a>
+              <h2 className="m-value">24</h2>
+              <div className="m-footer">
+                <span className="m-badge">5</span>
+                <span className="m-footer-txt">Increased from last month</span>
+              </div>
+            </div>
+
+            <div className="m-card plain-white">
+              <div className="m-card-header">
+                <span className="m-title">Ended Projects</span>
+                <span className="m-arrow dark">↗</span>
+              </div>
+              <h2 className="m-value">10</h2>
+              <div className="m-footer">
+                <span className="m-badge dark">6</span>
+                <span className="m-footer-txt">Increased from last month</span>
+              </div>
+            </div>
+
+            <div className="m-card plain-white">
+              <div className="m-card-header">
+                <span className="m-title">Running Projects</span>
+                <span className="m-arrow dark">↗</span>
+              </div>
+              <h2 className="m-value">12</h2>
+              <div className="m-footer">
+                <span className="m-badge dark">2</span>
+                <span className="m-footer-txt">Increased from last month</span>
+              </div>
+            </div>
+
+            <div className="m-card plain-white">
+              <div className="m-card-header">
+                <span className="m-title">Pending Project</span>
+                <span className="m-arrow dark">↗</span>
+              </div>
+              <h2 className="m-value">2</h2>
+              <div className="m-footer">
+                <span className="m-footer-txt status-only">On Discuss</span>
+              </div>
             </div>
           </div>
 
-          {/* Scrollable Container */}
-          <div className="activity-list scrollable-list">
-            {activities.map((item) => (
-              <div className="activity-item" key={item.id}>
-                <img src={item.avatar} alt={item.name} className="avatar" />
-                <div className="activity-details">
-                  <p><strong>{item.name}</strong> {item.action}</p>
-                  <p className="task-desc">
-                    <span className={`status-badge ${item.statusClass}`}>{item.statusText}</span>
-                    Task: {item.task}
-                  </p>
-                  <div className="activity-actions">
-                    <a href="#status">View Status</a>
-                    <a href="#map">Track Map</a>
+          {/* Middle Row: Project Analytics & Current Date Card Split */}
+          <div className="middle-split-row">
+            <div className="panel-card flex-60">
+              <h3>Project Analytics</h3>
+              <div className="analytics-pill-chart spaced-graph">
+                {analyticsData.map((item, idx) => (
+                  <div key={idx} className="pill-chart-col">
+                    <div className="pill-bar-track">
+                      <div className={`pill-bar-fill ${item.type}`}>
+                        {item.label && (
+                          <div className="pill-floating-tooltip">
+                            {item.label}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <span className="pill-axis-lbl">{item.day}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="panel-card flex-40 design-date-card">
+              <h3>Date</h3>
+              <div className="date-card-body">
+                <h1 className="date-large-day">{currentDayNameShort}</h1>
+                <p className="date-sub-details">{currentDayAndMonth}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row: Active Technicians & Active Tasks */}
+          <div className="bottom-split-row">
+            <div className="panel-card flex-60">
+              <div className="panel-header-with-btn">
+                <h3>Active Technicians</h3>
+              </div>
+              <div className="collab-rows-list">
+                {activeTechnicians.map((person, idx) => (
+                  <div key={idx} className="collab-item-row">
+                    <div className="collab-left-meta">
+                      <div className="collab-avatar" style={{ backgroundColor: person.color }}>
+                        {person.initial}
+                      </div>
+                      <div className="collab-naming">
+                        <h5>{person.name}</h5>
+                        <p>{person.task}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="panel-card flex-40">
+              <h3>Active Tasks</h3>
+              <div className="active-tasks-list">
+                {activeTasks.map((taskItem, idx) => (
+                  <div key={idx} className="active-task-item-row">
+                    <div className="task-profile-circle" style={{ backgroundColor: taskItem.color }}>
+                      {taskItem.initial}
+                    </div>
+                    <div className="task-meta-details">
+                      <h4>{taskItem.tech}</h4>
+                      <p>{taskItem.task}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right Sidebar Segment Flow */}
+        <div className="right-sidebar-segment">
+          <div className="panel-card full-height-card">
+            <div className="panel-header-with-btn">
+              <h3>Project</h3>
+              <button className="btn-panel-action">+ New</button>
+            </div>
+            <div className="sidebar-project-list">
+              {sidebarProjects.map((proj, idx) => (
+                <div key={idx} className="sidebar-proj-row">
+                  <div className="proj-icon-box" style={{ color: proj.color }}>
+                    {proj.icon}
+                  </div>
+                  <div className="proj-metadata">
+                    <h4>{proj.name}</h4>
+                    <p>Due date: <span>{proj.date}</span></p>
                   </div>
                 </div>
-                <span className="timestamp"><i className="far fa-clock"></i> {item.time}</span>
-                <button className="btn-icon"><i className="fas fa-ellipsis-v"></i></button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          {/* Pagination Footer */}
-          <footer className="pagination-container">
-            <span className="pagination-info">Max 50 items per page</span>
-            <div className="pagination-buttons">
-              <button
-                className={`page-btn ${currentPage === 1 ? 'active' : ''}`}
-                onClick={() => setCurrentPage(1)}
-              >
-                1
-              </button>
-              <button
-                className={`page-btn ${currentPage === 2 ? 'active' : ''}`}
-                onClick={() => setCurrentPage(2)}
-              >
-                2
-              </button>
-              <button
-                className={`page-btn ${currentPage === 3 ? 'active' : ''}`}
-                onClick={() => setCurrentPage(3)}
-              >
-                3
-              </button>
-            </div>
-          </footer>
-        </section>
-
-        {/* Right: Sidebar Controls */}
-        <aside className="sidebar-controls">
-          <h3>CONTROL CENTER</h3>
-
-          {/* Quick Assign Widget */}
-          <div className="widget-card">
-            <div className="widget-header-accent">
-              <i className="fas fa-bolt text-primary"></i> FAST TRACK
-            </div>
-            <h4>Quick Assign</h4>
-            <p className="widget-subtitle">Dispatch a technician instantly.</p>
-
-            <div className="form-group">
-              <label>Task Subject</label>
-              <input type="text" placeholder="e.g. Server Maintenance" />
-            </div>
-
-            <div className="form-group">
-              <label>Location</label>
-              <input type="text" placeholder="e.g. Building B, Floor 3" />
-            </div>
-
-            <div className="form-group">
-              <label>Technician</label>
-              <div className="select-wrapper">
-                <select defaultValue="">
-                  <option value="" disabled>Select available...</option>
-                </select>
-                <i className="fas fa-chevron-down select-arrow"></i>
+          <div className="panel-card abstract-time-tracker">
+            <h3>Time Tracker</h3>
+            <div className="tracker-row-elements">
+              <h2>{currentTimeString}</h2>
+              <div className="tracker-day-display">
+                {currentDayLong}
               </div>
             </div>
-
-            <button className="btn-primary"><i className="fas fa-plus"></i> Create Task</button>
           </div>
+        </div>
 
-          {/* Weekly Progress Widget */}
-          <div className="widget-card progress-widget">
-            <div className="progress-header">
-              <div>
-                <h5>Weekly Goal Progress</h5>
-                <h2 className="progress-percentage">82%</h2>
-              </div>
-              <div className="progress-stats">
-                <i className="fas fa-chart-bar font-large"></i>
-                <span>342/410 Tasks</span>
-              </div>
-            </div>
-            <div className="progress-bar-container">
-              <div className="progress-bar-fill" style={{ width: '82%' }}></div>
-            </div>
-            <a href="#audit" className="audit-link">Audit Reports <i className="fas fa-arrow-right"></i></a>
-          </div>
-        </aside>
-      </main>
+      </div>
     </div>
   );
 }

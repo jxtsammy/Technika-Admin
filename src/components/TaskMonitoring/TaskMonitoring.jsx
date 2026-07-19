@@ -140,10 +140,6 @@ export default function TaskMonitor() {
                 <i className="fa-solid fa-clock meta-icon"></i> {task.updated}
               </div>
             </div>
-
-            <button className="service-extra-details-btn">
-              View Detailed Updates <i className="fa-solid fa-chevron-right btn-arrow"></i>
-            </button>
           </div>
         ))}
       </div>
