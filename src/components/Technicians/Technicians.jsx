@@ -33,6 +33,7 @@ export default function Technicians() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
   }, [searchQuery, filterCriteria]);
 
@@ -76,9 +77,6 @@ export default function Technicians() {
           <h2>Technicians</h2>
           <p className="technicians-subtitle">Manage your field workforce and operational status.</p>
         </div>
-        <button className="technicians-btn-add-tech">
-          <i className="fas fa-plus"></i> Add New Technician
-        </button>
       </header>
 
       <section className="technicians-summary-grid">
