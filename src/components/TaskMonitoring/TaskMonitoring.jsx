@@ -1,148 +1,172 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import './TaskMonitoring.css';
 
-// Import your custom 3D figure fallback asset image here
-import Default3DFig from '../../assets/profile.png';
+export default function TechnikaTasks() {
+  const [selectAll, setSelectAll] = useState(false);
+  const [checkedItems, setCheckedItems] = useState({});
 
-const INITIAL_TASKS = [
-  { id: "T-1001", title: "HVAC System Maintenance - Block A", type: "In Progress", techName: "Marcus Chen", role: "Senior Technician", location: "North Industrial Park, Sector 4", updated: "Updated 4 mins ago", active: true, img: "" },
-  { id: "T-1002", title: "Electrical Panel Inspection", type: "Pending", techName: "Sarah Jenkins", role: "Electrical Specialist", location: "Heritage Mall, Level 2", updated: "Updated 22 mins ago", active: false, img: "" },
-  { id: "T-1003", title: "Fiber Optic Cable Repair", type: "Completed", techName: "David Wilson", role: "Network Engineer", location: "Corporate Plaza, West Wing", updated: "Updated 1 hour ago", active: false, img: "" },
-  { id: "T-1004", title: "Emergency Generator Testing", type: "In Progress", techName: "Elena Rodriguez", role: "Mechanical Tech", location: "City General Hospital", updated: "Updated 12 mins ago", active: true, img: "" },
-  { id: "T-1005", title: "Water Filtration Filter Swap", type: "Delayed", techName: "Robert Taylor", role: "Plumbing Expert", location: "Green Valley Apartments", updated: "Updated 45 mins ago", active: false, img: "" },
-  { id: "T-1006", title: "Security Camera Calibration", type: "In Progress", techName: "Aisha Khan", role: "System Integrator", location: "Downtown Public Library", updated: "Updated Just now", active: true, img: "" }
-];
+  const taskStats = [
+    { label: 'Total Tasks', value: 12, sub: 'Tasks created this month', change: '+18%', isPositive: true, icon: 'fa-clipboard-list' },
+    { label: 'In Progress', value: 4, sub: 'Currently being worked on', change: '-12%', isPositive: false, icon: 'fa-spinner' },
+    { label: 'Completed', value: 8, sub: 'Tasks finished this week', change: '+24%', isPositive: true, icon: 'fa-circle-check' },
+    { label: 'Overdue', value: 2, sub: 'Missed deadlines', change: '+5%', isPositive: false, icon: 'fa-triangle-exclamation' }
+  ];
 
-export default function TaskMonitor() {
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [techFilter, setTechFilter] = useState('All');
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const initialTasks = [
+    { id: 1, name: 'HVAC Router Installation', system: 'Terminal B Mainframe', technician: 'Jane Cooper', priority: 'Low', status: 'To Do', date: 'Mar 12, 2026' },
+    { id: 2, name: 'Fiber Cable Splice Repair', system: 'Grid Sector 4', technician: 'Robert Fox', priority: 'Medium', status: 'To Do', date: 'Mar 13, 2026' },
+    { id: 3, name: 'Emergency Generator Diagnostics', system: 'Substation Alpha', technician: 'Eleanor Pena', priority: 'High', status: 'In Progress', date: 'Mar 14, 2026' },
+    { id: 4, name: 'Server Rack Power Auditing', system: 'Data Center Row C', technician: 'Guy Hawkins', priority: 'Medium', status: 'In Progress', date: 'Mar 15, 2026' },
+    { id: 5, name: 'CCTV Camera Calibration', system: 'Perimeter Wall West', technician: 'Annette Black', priority: 'Medium', status: 'Review', date: 'Mar 16, 2026' },
+    { id: 6, name: 'Fire Suppression Inspection', system: 'Chemical Storage Hub', technician: 'Jacob Jones', priority: 'Low', status: 'Review', date: 'Mar 17, 2026' },
+    { id: 7, name: 'UPS Battery Module Replacement', system: 'Control Tower Vault', technician: 'Esther Howard', priority: 'High', status: 'Completed', date: 'Mar 18, 2026' }
+  ];
 
-  const totalActive = INITIAL_TASKS.filter(t => t.type === 'In Progress').length;
-  const totalCompleted = INITIAL_TASKS.filter(t => t.type === 'Completed').length;
-  const totalDelayed = INITIAL_TASKS.filter(t => t.type === 'Delayed').length;
+  const handleSelectAll = () => {
+    const updated = !selectAll;
+    setSelectAll(updated);
+    const flags = {};
+    if (updated) {
+      initialTasks.forEach(t => { flags[t.id] = true; });
+    }
+    setCheckedItems(flags);
+  };
 
-  const filteredTasks = INITIAL_TASKS.filter(task => {
-    const matchesStatus = statusFilter === 'All' || task.type.toLowerCase() === statusFilter.toLowerCase();
-    let matchesTech = true;
-    if (techFilter === 'Active') matchesTech = task.active === true;
-    if (techFilter === 'Inactive') matchesTech = task.active === false;
-    return matchesStatus && matchesTech;
-  });
+  const handleToggleRow = (id) => {
+    setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const getPriorityClass = (p) => {
+    if (p === 'High') return 'prio-high';
+    if (p === 'Medium') return 'prio-med';
+    return 'prio-low';
+  };
+
+  const getStatusClass = (s) => {
+    if (s === 'Completed') return 'stat-done';
+    if (s === 'In Progress') return 'stat-progress';
+    if (s === 'Review') return 'stat-review';
+    return 'stat-todo';
+  };
 
   return (
-    <div className="service-extra-monitor-container">
-      {/* Top Cards Section */}
-      <div className="service-extra-stats-grid">
-        <div className="service-extra-stat-card">
-          <div className="service-extra-stat-icon active-icon">
-            <i className="fa-solid fa-bolt"></i>
-          </div>
-          <div>
-            <span className="service-extra-stat-label">ACTIVE TASKS</span>
-            <h2 className="service-extra-stat-value">{totalActive}</h2>
-          </div>
-        </div>
-        <div className="service-extra-stat-card">
-          <div className="service-extra-stat-icon completed-icon">
-            <i className="fa-solid fa-check"></i>
-          </div>
-          <div>
-            <span className="service-extra-stat-label">COMPLETED TODAY</span>
-            <h2 className="service-extra-stat-value">{totalCompleted}</h2>
-          </div>
-        </div>
-        <div className="service-extra-stat-card">
-          <div className="service-extra-stat-icon delayed-icon">
-            <i className="fa-solid fa-triangle-exclamation"></i>
-          </div>
-          <div>
-            <span className="service-extra-stat-label">DELAYED</span>
-            <h2 className="service-extra-stat-value">{totalDelayed}</h2>
-          </div>
-        </div>
-      </div>
+    <div className="technika-tasks-container">
 
-      {/* Control Header Row */}
-      <div className="service-extra-control-header">
-        <div className="service-extra-title-group">
-          <h3>Real-time Tasks ({filteredTasks.length})</h3>
-          <span className="service-extra-live-indicator">● Auto-updating every 30s</span>
+      {/* Top Controls Header */}
+      <header className="tasks-ui-header">
+        <div className="header-text-group">
+          <h2>My Tasks</h2>
+          <p>Manage and track all your tasks</p>
         </div>
+        <div className="header-control-buttons">
+          <button className="icon-search-btn" aria-label="Search">
+            <i className="fa-solid fa-magnifying-glass"></i>
+          </button>
+          <button className="filter-dropdown-btn">
+            <span>Filters</span> <i className="fa-solid fa-sliders"></i>
+          </button>
+          <button className="btn-action-primary-green">
+            <span>+ Add Tasks</span>
+          </button>
+        </div>
+      </header>
 
-        <div className="service-extra-filter-controls">
-          <div className="service-extra-tabs-row">
-            {['All', 'In Progress', 'Pending', 'Delayed'].map((tab) => (
-              <button
-                key={tab}
-                className={`service-extra-tab-btn ${statusFilter === tab ? 'active' : ''}`}
-                onClick={() => setStatusFilter(tab)}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Criteria Dropdown Trigger */}
-          <div className="service-extra-dropdown-wrapper">
-            <button
-              className={`service-extra-icon-btn ${techFilter !== 'All' ? 'filter-engaged' : ''}`}
-              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            >
-              <i className="fa-solid fa-filter"></i>
-            </button>
-
-            {showFilterDropdown && (
-              <div className="service-extra-filter-dropdown">
-                <div className="dropdown-title">Technician Status</div>
-                <button className={techFilter === 'All' ? 'selected' : ''} onClick={() => { setTechFilter('All'); setShowFilterDropdown(false); }}>All Technicians</button>
-                <button className={techFilter === 'Active' ? 'selected' : ''} onClick={() => { setTechFilter('Active'); setShowFilterDropdown(false); }}>🟢 Active Only</button>
-                <button className={techFilter === 'Inactive' ? 'selected' : ''} onClick={() => { setTechFilter('Inactive'); setShowFilterDropdown(false); }}>🟡 Inactive Only</button>
+      {/* Grid Dashboard Metric Cards */}
+      <section className="tasks-dashboard-cards-grid">
+        {taskStats.map((stat, i) => (
+          <div key={i} className="task-metric-card-box">
+            <div className="card-top-header-row">
+              <div className="card-lbl-with-icon">
+                <span className="card-emoji-icon">
+                  <i className={`fa-solid ${stat.icon}`}></i>
+                </span>
+                <span className="card-meta-label">{stat.label}</span>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
+              <button className="card-menu-ellipsis">
+                <i className="fa-solid fa-ellipsis-vertical"></i>
+              </button>
+            </div>
 
-      {/* Cards Grid Layout */}
-      <div className="service-extra-tasks-grid">
-        {filteredTasks.map((task) => (
-          <div key={task.id} className="service-extra-task-card">
-            <div className="service-extra-card-header">
-              <span className="service-extra-task-id">{task.id}</span>
-              <span className={`service-extra-status-badge ${task.type.toLowerCase().replace(" ", "-")}`}>
-                {task.type}
+            <div className="card-central-numerical-row">
+              <h3 className="card-main-metric-value">{stat.value}</h3>
+              <span className={`card-percentage-badge ${stat.isPositive ? 'badge-up' : 'badge-down'}`}>
+                {stat.change}
               </span>
             </div>
-
-            <h4 className="service-extra-task-title">{task.title}</h4>
-
-            <div className="service-extra-tech-row">
-              <div className="service-extra-avatar-box">
-                <img
-                  src={task.img || Default3DFig}
-                  alt={task.techName}
-                  className="tech-image-file"
-                />
-                <span className={`service-extra-status-dot ${task.active ? 'active-green' : 'inactive-yellow'}`}></span>
-              </div>
-              <div className="service-extra-tech-info">
-                <h5>{task.techName}</h5>
-                <p>{task.role}</p>
-              </div>
-            </div>
-
-            <div className="service-extra-metadata">
-              <div className="meta-line">
-                <i className="fa-solid fa-location-dot meta-icon"></i> {task.location}
-              </div>
-              <div className="meta-line">
-                <i className="fa-solid fa-clock meta-icon"></i> {task.updated}
-              </div>
-            </div>
+            <p className="card-lower-descriptor-text">{stat.sub}</p>
           </div>
         ))}
-      </div>
+      </section>
+
+      {/* Primary Tabular Registry Canvas */}
+      <main className="tasks-tabular-data-board">
+        <table className="tasks-interactive-table">
+          <thead>
+            <tr>
+              <th className="cell-checkbox-col">
+                <input type="checkbox" checked={selectAll} onChange={handleSelectAll} />
+              </th>
+              <th>Task Name</th>
+              <th>Project</th>
+              <th>Assignee</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Due Date</th>
+              <th className="cell-actions-col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {initialTasks.map((task) => (
+              <tr key={task.id} className={checkedItems[task.id] ? 'row-state-highlighted' : ''}>
+                <td className="cell-checkbox-col">
+                  <input type="checkbox" checked={!!checkedItems[task.id]} onChange={() => handleToggleRow(task.id)} />
+                </td>
+                <td className="cell-task-name-text">{task.name}</td>
+                <td className="cell-project-hub-text">{task.system}</td>
+                <td className="cell-assignee-profile-badge">
+                  <div className="assignee-inner-capsule">
+                    <div className="assignee-stub-avatar">
+                      <i className="fa-solid fa-user-gear"></i>
+                    </div>
+                    <span className="assignee-string-name">{task.technician}</span>
+                  </div>
+                </td>
+                <td>
+                  <span className={`priority-pill-tag ${getPriorityClass(task.priority)}`}>
+                    {task.priority}
+                  </span>
+                </td>
+                <td>
+                  <span className={`status-pill-tag ${getStatusClass(task.status)}`}>
+                    {task.status}
+                  </span>
+                </td>
+                <td className="cell-date-string-txt">{task.date}</td>
+                <td className="cell-actions-col">
+                  <button className="row-action-trigger-dots">
+                    <i className="fa-solid fa-ellipsis-vertical"></i>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Footer Index Controls */}
+        <footer className="table-pagination-footer-bar">
+          <span className="pagination-counter-legend">Showing 1–10 of 12 tasks</span>
+          <div className="pagination-navigation-actions-cluster">
+            <button className="pagination-arrow-step-btn" disabled>
+              <i className="fa-solid fa-chevron-left"></i>
+            </button>
+            <button className="pagination-numeric-indicator active-index-highlight">1</button>
+            <button className="pagination-numeric-indicator">2</button>
+            <button className="pagination-arrow-step-btn">
+              <i className="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }

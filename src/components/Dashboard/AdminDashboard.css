@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .exact-dashboard-wrapper {
-  background-color: #f4f7f6;
+  background-color: #ffffff;
   min-height: 100vh;
-  padding: 40px;
+  padding: 45px;
   font-family: 'Inter', sans-serif;
   color: #111111;
   box-sizing: border-box;
@@ -30,39 +30,45 @@
   margin: 0;
 }
 
-.header-actions-block {
-  display: flex;
-  gap: 12px;
-}
-
-.btn-add-project {
-  background-color: #0b3c29;
-  color: #ffffff;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 40px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+/* Identity Badge Component Custom Styles matching the Image UI Layout */
+.header-profile-badge {
   display: flex;
   align-items: center;
-  gap: 6px;
-  transition: opacity 0.2s;
+  gap: 12px;
+  background-color: transparent;
+  padding: 4px;
 }
 
-.btn-add-project:hover, .btn-import-data:hover {
-  opacity: 0.9;
+.profile-badge-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #eebcc1; /* Warm pink tone matched from identity capsule reference link */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.btn-import-data {
-  background-color: #ffffff;
-  color: #111111;
-  border: 1px solid #dcdcdc;
-  padding: 12px 24px;
-  border-radius: 40px;
-  font-size: 14px;
+.profile-badge-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-badge-name {
+  font-size: 16px;
   font-weight: 600;
-  cursor: pointer;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.profile-badge-email {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: 2px;
+  font-weight: 400;
 }
 
 /* Master Grid Structure */
@@ -86,7 +92,7 @@
 
 /* Shared Panel Card Aesthetics */
 .panel-card {
-  background-color: #ffffff;
+  background-color: #eae8e8;
   border-radius: 24px;
   padding: 24px;
   box-sizing: border-box;
@@ -112,7 +118,7 @@
 }
 
 .btn-panel-action {
-  background-color: #ffffff;
+  background-color: #eae8e8;
   border: 1px solid #e2e8f0;
   border-radius: 20px;
   padding: 6px 14px;
@@ -139,11 +145,11 @@
 
 .m-card.focus-green {
   background-color: #1e7c54;
-  color: #ffffff;
+  color: #eae8e8;
 }
 
 .m-card.plain-white {
-  background-color: #ffffff;
+  background-color: #eae8e8;
   color: #111111;
   border: 1px solid #f0f2f1;
 }
@@ -213,14 +219,13 @@
   font-weight: 500;
 }
 
-/* Layout Row Split Flex Sizing */
-.middle-split-row,
-.bottom-split-row {
+/* Layout Split Flex Sizing */
+.middle-split-row {
   display: flex;
   gap: 24px;
 }
 
-.flex-60 { flex: 1.5; }
+.flex-60 { flex: 1.4; }
 .flex-40 { flex: 1; }
 
 /* Spaced Out Graph Configurations */
@@ -230,7 +235,7 @@
   align-items: flex-end;
   height: 180px;
   padding: 10px 0 0 0;
-  gap: 16px; /* Increases spacing between analytics tracking blocks */
+  gap: 20px;
 }
 
 .pill-chart-col {
@@ -262,8 +267,8 @@
     -45deg,
     #e5e7eb,
     #e5e7eb 4px,
-    #ffffff 4px,
-    #ffffff 8px
+    #eae8e8 4px,
+    #eae8e8 8px
   );
   border: 1px dashed #d1d5db;
   box-sizing: border-box;
@@ -289,27 +294,13 @@
   top: -34px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #ffffff;
+  background-color: #eae8e8;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   padding: 3px 6px;
   font-size: 11px;
   font-weight: 600;
   color: #1e7c54;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-}
-
-.pill-floating-tooltip::after {
-  content: '';
-  position: absolute;
-  bottom: -4px;
-  left: 50%;
-  transform: translateX(-50%) rotate(45deg);
-  width: 6px;
-  height: 6px;
-  background-color: #ffffff;
-  border-right: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
 }
 
 .pill-axis-lbl {
@@ -319,22 +310,28 @@
   margin-top: 10px;
 }
 
-/* Date Reminders Alternative Styling */
-.design-date-card {
+.design-date-card.centered-layout {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.design-date-card.centered-layout h3 {
+  align-self: flex-start;
 }
 
 .date-card-body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   flex-grow: 1;
-  padding-bottom: 12px;
+  padding-bottom: 20px;
 }
 
 .date-large-day {
-  font-size: 56px;
+  font-size: 80px;
   font-weight: 700;
   color: #0b3c29;
   margin: 0;
@@ -342,91 +339,12 @@
 }
 
 .date-sub-details {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 30px;
+  font-weight: 600;
   color: #6b7280;
-  margin: 8px 0 0 0;
-}
-
-/* Collaboration Row Lists Elements Layout */
-.collab-rows-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.collab-item-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.collab-left-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.collab-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.collab-naming h5 {
-  margin: 0 0 2px 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #111111;
-}
-
-.collab-naming p {
-  margin: 0;
-  font-size: 13px;
-  color: #4b5563;
-}
-
-/* Active Tasks Alternative Card Block list styling */
-.active-tasks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.active-task-item-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.task-profile-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.task-meta-details h4 {
-  margin: 0 0 2px 0;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.task-meta-details p {
-  margin: 0;
-  font-size: 12px;
-  color: #6b7280;
+  margin: 0px 0 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Sidebar Multi-Projects List Configuration Elements */
@@ -466,10 +384,41 @@
   color: #9ca3af;
 }
 
-/* Time Tracker Specific Theming */
+.no-tasks-placeholder {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.no-tasks-placeholder i {
+  font-size: 2rem;
+  opacity: 0.4;
+}
+
+.no-tasks-placeholder p {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.proj-icon-box {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* Time Tracker Layout */
 .panel-card.abstract-time-tracker {
   background: linear-gradient(135deg, #0b3c29 0%, #062419 100%);
-  color: #ffffff;
+  color: #eae8e8;
 }
 
 .panel-card.abstract-time-tracker h3 {
@@ -484,7 +433,7 @@
 }
 
 .tracker-row-elements h2 {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   margin: 0;
   letter-spacing: 0.5px;
@@ -492,8 +441,9 @@
 }
 
 .tracker-day-display {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.7);
   letter-spacing: 0.5px;
+  text-transform: uppercase;
 }

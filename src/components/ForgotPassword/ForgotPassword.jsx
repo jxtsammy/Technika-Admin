@@ -66,19 +66,19 @@ export default function ForgotPasswordFlow() {
   const rightPanelContent = {
     1: {
       img: ImageStep1,
-      quote: "Goodwell and partners rely on Untitled to simplify workflows and invoicing, reducing admin tasks by over 40% monthly."
+      quote: "Technika administrators rely on the dashboard to coordinate field dispatches and dispatch real-time maintenance routes, reducing resolution times by over 40% monthly."
     },
     2: {
       img: ImageStep2,
-      quote: "Security metrics infrastructure scales instantly to handle high compliance standards effortlessly across our global operations."
+      quote: "Real-time task dispatch tracking scales instantly, providing precise terminal oversight and live location statuses for technicians across regional service zones."
     },
     3: {
       img: ImageStep3,
-      quote: "Finalizing access tokens securely ensures administrative operations run safely without downtime risk points."
+      quote: "Synchronizing the task dispatch queue ensures field technicians receive updated job tickets and navigation alerts safely without miscommunication points."
     },
     4: {
       img: ImageStep4,
-      quote: "Account security access restored successfully. Global credentials updated securely throughout production clusters."
+      quote: "Technician status and service diagnostics logs synchronized successfully. Central command console updated across all active field hubs."
     }
   };
 

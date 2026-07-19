@@ -1,12 +1,25 @@
-
+import { useState, useEffect } from 'react';
 import './AdminDashboard.css';
 
-export default function Dashboard({ onNavigate }) {
-  // Hardcoded date based on system state: Sunday, July 19, 2026
-  const currentDayNameShort = 'Sun';
-  const currentDayLong = 'Sunday';
-  const currentDayAndMonth = '19 July';
-  const currentTimeString = '01:19:28';
+export default function Dashboard() {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const timeString = time.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+
+  const dayOfWeekLong = time.toLocaleDateString('en-US', { weekday: 'long' });
+  const dayOfWeekShort = time.toLocaleDateString('en-US', { weekday: 'short' });
+  const dayOfMonth = time.getDate();
+  const monthName = time.toLocaleDateString('en-US', { month: 'long' });
 
   const analyticsData = [
     { day: 'S', type: 'striped' },
@@ -18,58 +31,39 @@ export default function Dashboard({ onNavigate }) {
     { day: 'S', type: 'striped' }
   ];
 
-  const activeTechnicians = [
-    { name: 'Kwame Mensah', task: 'Repairing main generator unit at Downtown Hub A', initial: 'KM', color: '#f87171' },
-    { name: 'Ama Osei', task: 'Deploying security credentials layer onto core switch', initial: 'AO', color: '#4ade80' },
-    { name: 'Kofi Boateng', task: 'Calibrating backup transceiver nodes', initial: 'KB', color: '#60a5fa' },
-    { name: 'Abena Asare', task: 'Running responsive diagnostic protocols', initial: 'AA', color: '#fb923c' }
-  ];
-
-  const activeTasks = [
-    { tech: 'Kwame Mensah', task: 'Generator Calibration', initial: 'KM', color: '#f87171' },
-    { tech: 'Ama Osei', task: 'Security Authentication Update', initial: 'AO', color: '#4ade80' },
-    { tech: 'Kofi Boateng', task: 'Transceiver Diagnostic Hub', initial: 'KB', color: '#60a5fa' }
-  ];
-
-  const sidebarProjects = [
-    { name: 'Develop API Endpoints', date: 'Nov 26, 2024', color: '#3b82f6', icon: '⚡' },
-    { name: 'Onboarding Flow', date: 'Nov 28, 2024', color: '#0d9488', icon: '💠' },
-    { name: 'Build Dashboard', date: 'Nov 30, 2024', color: '#a855f7', icon: '✢' },
-    { name: 'Optimize Page Load', date: 'Dec 5, 2024', color: '#eab308', icon: '📐' },
-    { name: 'Cross-Browser Testing', date: 'Dec 6, 2024', color: '#ec4899', icon: '🔮' }
+  const assignedTasks = [
+    { taskTitle: 'Fix Bill Counter Sensor Error', technicianAssigned: 'Kwame Mensah', color: '#ec4899', icon: '🔧' },
+    { taskTitle: 'Onboard Bank Cashier Team', technicianAssigned: 'Abena Osei', color: '#3b82f6', icon: '👥' },
+    { taskTitle: 'Deliver 5 Mixed Note Counters', technicianAssigned: 'Kofi Boateng', color: '#0d9488', icon: '📦' },
+    { taskTitle: 'Routine Maintenance on Coin Sorter', technicianAssigned: 'Yaw Appiah', color: '#eab308', icon: '⚙️' },
+    { taskTitle: 'Calibrate Heavy-Duty Counter', technicianAssigned: 'Esi Ansah', color: '#a855f7', icon: '📐' }
   ];
 
   return (
     <div className="exact-dashboard-wrapper">
-
-      {/* Top Header Row */}
       <header className="exact-header">
         <div className="header-title-block">
           <h1>Dashboard</h1>
-          <p>Plan, prioritize, and accomplish your tasks with ease.</p>
+          <p>Coordinate field dispatches and dispatch real-time maintenance routes</p>
         </div>
-        <div className="header-actions-block">
-          {/* Functional tab switching placeholders using the layout controls */}
-          <button className="btn-add-project" onClick={() => onNavigate?.('map-tracking')}>
-            Map Tracking
-          </button>
-          <button className="btn-import-data" onClick={() => onNavigate?.('tasks')}>
-            Tasks
-          </button>
+
+        <div className="header-profile-badge">
+          <div className="profile-badge-avatar">
+            <span role="img" aria-label="avatar">SS</span>
+          </div>
+          <div className="profile-badge-details">
+            <span className="profile-badge-name">Samuel Sallo</span>
+            <span className="profile-badge-email">ssallo1012@gmail.com</span>
+          </div>
         </div>
       </header>
 
-      {/* Primary Layout Grid */}
       <div className="exact-grid-layout">
-
-        {/* Left Segment Flow */}
         <div className="left-content-segment">
-
-          {/* Top Row: 4 Metric Cards */}
           <div className="exact-metrics-row">
             <div className="m-card focus-green">
               <div className="m-card-header">
-                <span className="m-title">Total Projects</span>
+                <span className="m-title">Total Technicians</span>
                 <span className="m-arrow">↗</span>
               </div>
               <h2 className="m-value">24</h2>
@@ -81,7 +75,7 @@ export default function Dashboard({ onNavigate }) {
 
             <div className="m-card plain-white">
               <div className="m-card-header">
-                <span className="m-title">Ended Projects</span>
+                <span className="m-title">Total Tasks</span>
                 <span className="m-arrow dark">↗</span>
               </div>
               <h2 className="m-value">10</h2>
@@ -93,7 +87,7 @@ export default function Dashboard({ onNavigate }) {
 
             <div className="m-card plain-white">
               <div className="m-card-header">
-                <span className="m-title">Running Projects</span>
+                <span className="m-title">Completed Today</span>
                 <span className="m-arrow dark">↗</span>
               </div>
               <h2 className="m-value">12</h2>
@@ -105,7 +99,7 @@ export default function Dashboard({ onNavigate }) {
 
             <div className="m-card plain-white">
               <div className="m-card-header">
-                <span className="m-title">Pending Project</span>
+                <span className="m-title">Pending Assignment</span>
                 <span className="m-arrow dark">↗</span>
               </div>
               <h2 className="m-value">2</h2>
@@ -115,10 +109,9 @@ export default function Dashboard({ onNavigate }) {
             </div>
           </div>
 
-          {/* Middle Row: Project Analytics & Current Date Card Split */}
           <div className="middle-split-row">
             <div className="panel-card flex-60">
-              <h3>Project Analytics</h3>
+              <h3>Work Analytics</h3>
               <div className="analytics-pill-chart spaced-graph">
                 {analyticsData.map((item, idx) => (
                   <div key={idx} className="pill-chart-col">
@@ -137,91 +130,54 @@ export default function Dashboard({ onNavigate }) {
               </div>
             </div>
 
-            <div className="panel-card flex-40 design-date-card">
+            <div className="panel-card flex-40 design-date-card centered-layout">
               <h3>Date</h3>
               <div className="date-card-body">
-                <h1 className="date-large-day">{currentDayNameShort}</h1>
-                <p className="date-sub-details">{currentDayAndMonth}</p>
+                <h1 className="date-large-day">{dayOfWeekShort}</h1>
+                <p className="date-sub-details">{dayOfMonth} {monthName}</p>
               </div>
             </div>
           </div>
-
-          {/* Bottom Row: Active Technicians & Active Tasks */}
-          <div className="bottom-split-row">
-            <div className="panel-card flex-60">
-              <div className="panel-header-with-btn">
-                <h3>Active Technicians</h3>
-              </div>
-              <div className="collab-rows-list">
-                {activeTechnicians.map((person, idx) => (
-                  <div key={idx} className="collab-item-row">
-                    <div className="collab-left-meta">
-                      <div className="collab-avatar" style={{ backgroundColor: person.color }}>
-                        {person.initial}
-                      </div>
-                      <div className="collab-naming">
-                        <h5>{person.name}</h5>
-                        <p>{person.task}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="panel-card flex-40">
-              <h3>Active Tasks</h3>
-              <div className="active-tasks-list">
-                {activeTasks.map((taskItem, idx) => (
-                  <div key={idx} className="active-task-item-row">
-                    <div className="task-profile-circle" style={{ backgroundColor: taskItem.color }}>
-                      {taskItem.initial}
-                    </div>
-                    <div className="task-meta-details">
-                      <h4>{taskItem.tech}</h4>
-                      <p>{taskItem.task}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
         </div>
 
-        {/* Right Sidebar Segment Flow */}
         <div className="right-sidebar-segment">
-          <div className="panel-card full-height-card">
+          <div className="panel-card full-height-card dashboard-tasks-card">
             <div className="panel-header-with-btn">
-              <h3>Project</h3>
-              <button className="btn-panel-action">+ New</button>
+              <h3>Assigned Tasks</h3>
             </div>
-            <div className="sidebar-project-list">
-              {sidebarProjects.map((proj, idx) => (
-                <div key={idx} className="sidebar-proj-row">
-                  <div className="proj-icon-box" style={{ color: proj.color }}>
-                    {proj.icon}
-                  </div>
-                  <div className="proj-metadata">
-                    <h4>{proj.name}</h4>
-                    <p>Due date: <span>{proj.date}</span></p>
-                  </div>
+
+            <div className="sidebar-project-list tasks-container-wrapper">
+              {assignedTasks.length === 0 ? (
+                <div className="no-tasks-placeholder">
+                  <i className="fa-regular fa-clipboard"></i>
+                  <p>No Tasks Assigned</p>
                 </div>
-              ))}
+              ) : (
+                assignedTasks.map((task, idx) => (
+                  <div key={idx} className="sidebar-proj-row">
+                    <div className="proj-icon-box" style={{ background: `${task.color}20`, color: task.color, padding: '8px', borderRadius: '50%' }}>
+                      <i className="fa-solid fa-user"></i>
+                    </div>
+                    <div className="proj-metadata">
+                      <h4>{task.taskTitle}</h4>
+                      <p>Assigned to: <span>{task.technicianAssigned}</span></p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
           <div className="panel-card abstract-time-tracker">
             <h3>Time Tracker</h3>
             <div className="tracker-row-elements">
-              <h2>{currentTimeString}</h2>
+              <h2>{timeString}</h2>
               <div className="tracker-day-display">
-                {currentDayLong}
+                {dayOfWeekLong}
               </div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
