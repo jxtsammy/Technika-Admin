@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import './CustomerListing.css';
 import noClients from '../../../assets/noPosts.png';
+import AddClientModal from '../AddClient/AddClientModal';
 
 export default function ClientsDashboard() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewType, setViewType] = useState('grid');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const bankClients = [
+  const [bankClients, setBankClients] = useState([
     { id: 1, name: 'GCB Bank PLC', email: 'info@gcbbank.com.gh', phone: '(030) 266-4911', type: 'all', avatar: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a?w=150&h=150&fit=crop' },
     { id: 2, name: 'Ecobank Ghana', email: 'contact@ecobank.com', phone: '(030) 221-3999', type: 'all', avatar: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&h=150&fit=crop' },
     { id: 3, name: 'Absa Bank Ghana', email: 'absa.ghana@absa.africa', phone: '(030) 242-9100', type: 'all', avatar: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?w=150&h=150&fit=crop' },
@@ -17,7 +19,11 @@ export default function ClientsDashboard() {
     { id: 7, name: 'Zenith Bank Ghana', email: 'info@zenithbank.com.gh', phone: '(030) 261-1500', type: 'all', avatar: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=150&h=150&fit=crop' },
     { id: 8, name: 'CalBank PLC', email: 'customercare@calbank.net', phone: '(030) 268-0068', type: 'new', avatar: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=150&h=150&fit=crop' },
     { id: 9, name: 'Consolidated Bank Ghana', email: 'info@cbg.com.gh', phone: '(030) 221-6000', type: 'all', avatar: 'https://images.unsplash.com/photo-1542744094-3a31f103e35f?w=150&h=150&fit=crop' }
-  ];
+  ]);
+
+  const handleCreateClient = (newClient) => {
+    setBankClients((prevClients) => [newClient, ...prevClients]);
+  };
 
   const filteredBanks = bankClients.filter(bank => {
     const matchesSearch = bank.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -31,18 +37,15 @@ export default function ClientsDashboard() {
 
   return (
     <div className="clients-dashboard-container">
-
-      {/* Top Main Title Bar Row */}
       <header className="clients-main-header">
         <div className="title-dropdown-trigger">
           <h1>Client Dashboard</h1>
         </div>
-        <button className="btn-add-new-client">
+        <button className="btn-add-new-client" onClick={() => setIsModalOpen(true)}>
           <i className="fa-solid fa-plus"></i> New Client
         </button>
       </header>
 
-      {/* Navigation Subheader Filter Bar */}
       <div className="clients-sub-navigation-bar">
         <div className="tabs-navigation-cluster">
           <button
@@ -88,7 +91,6 @@ export default function ClientsDashboard() {
         </div>
       </div>
 
-      {/* Dynamic Grid Layout View */}
       {filteredBanks.length > 0 ? (
         <main className={`clients-cards-display-canvas ${viewType === 'list' ? 'list-layout-active' : ''}`}>
           {filteredBanks.map((bank) => (
@@ -123,7 +125,6 @@ export default function ClientsDashboard() {
           ))}
         </main>
       ) : (
-        /* Empty Fallback State Component Matrix */
         <div className="clients-empty-state-canvas">
           <img
             src={noClients}
@@ -135,6 +136,11 @@ export default function ClientsDashboard() {
         </div>
       )}
 
+      <AddClientModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreateClient={handleCreateClient}
+      />
     </div>
   );
 }

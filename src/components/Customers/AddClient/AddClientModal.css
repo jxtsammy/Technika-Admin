@@ -1,0 +1,258 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.modal-blur-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  font-family: 'Inter', sans-serif;
+  padding: 20px;
+}
+
+.split-panel-modal-container {
+  display: flex;
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 940px;
+  height: 540px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+.modal-left-graphic-panel {
+  flex: 1.1;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.graphic-gradient-scrim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%);
+  z-index: 1;
+}
+
+.graphic-overlay-caption {
+  position: relative;
+  z-index: 2;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 400;
+  margin: 0;
+  opacity: 0.95;
+}
+
+.modal-right-form-panel.positional-holder {
+  flex: 1.2;
+  padding: 24px 38px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.modal-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-panel-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.modal-close-icon-btn {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #94a3b8;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-compact-form-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-input-field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-input-field-block label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.form-standard-text-input {
+  width: 100%;
+  height: 38px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: #0f172a;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.form-standard-text-input::placeholder {
+  color: #cbd5e1;
+}
+
+.alignment-half-width {
+  width: 50%;
+  padding-right: 8px;
+  box-sizing: border-box;
+}
+
+.modal-panel-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.wizard-back-navigation-btn {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+}
+
+.wizard-back-navigation-btn:hover {
+  color: #64748b;
+}
+
+.wizard-dot-pagination-track {
+  display: flex;
+  gap: 5px;
+}
+
+.wizard-create-task-submit-btn {
+  background-color: #007a3f;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 0 18px;
+  height: 36px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wizard-create-task-submit-btn:hover {
+  background-color: #047857;
+}
+
+/* Fading Transition Layer Architecture */
+.fade-layer-wrapper {
+  transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1), transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-layer-wrapper.fade-out {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.fade-layer-wrapper.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Success Visual Message Box Elements styling tree */
+.success-message-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding-right: 20px;
+}
+
+.success-badge-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  background-color: #0f172a;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+}
+
+.checkmark-svg {
+  width: 18px;
+  height: 18px;
+}
+
+.success-title-text {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.5px;
+}
+
+.success-body-message {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #64748b;
+  margin: 0 0 28px 0;
+  max-width: 420px;
+}
+
+.success-dismiss-link-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.success-dismiss-link-btn:hover {
+  color: #0f172a;
+}

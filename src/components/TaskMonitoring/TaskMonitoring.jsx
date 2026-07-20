@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import './TaskMonitoring.css';
+import AddTaskModal from './AddTask/AddTaskModal';
 
 export default function TechnikaTasks() {
   const [filterCriteria, setFilterCriteria] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const taskStats = [
     { label: 'Total Tasks', value: 12, sub: 'Tasks created this month', change: '+18%', isPositive: true, icon: 'fa-clipboard-list' },
@@ -34,7 +36,6 @@ export default function TechnikaTasks() {
     return 'stat-pending';
   };
 
-  // Filter & Search Logic
   const filteredTasks = initialTasks.filter(task => {
     const matchesSearch = task.name.toLowerCase().includes(searchQuery.toLowerCase());
     if (filterCriteria === 'all') return matchesSearch;
@@ -46,11 +47,9 @@ export default function TechnikaTasks() {
 
   return (
     <div className="technika-tasks-container">
-
-      {/* Top Controls Header */}
       <header className="tasks-ui-header">
         <div className="header-text-group">
-          <h2>Tasks Managment</h2>
+          <h2>Operations Managment</h2>
           <p>Manage and track all your Techncian Tasks</p>
         </div>
         <div className="header-control-buttons">
@@ -80,13 +79,12 @@ export default function TechnikaTasks() {
               <option value="Low">Priority: Low</option>
             </select>
           </div>
-          <button className="btn-action-primary-green">
-            <span>+ Add Tasks</span>
+          <button className="btn-action-primary-green" onClick={() => setIsModalOpen(true)}>
+            <span>+ Create</span>
           </button>
         </div>
       </header>
 
-      {/* Grid Dashboard Metric Cards */}
       <section className="tasks-dashboard-cards-grid">
         {taskStats.map((stat, i) => (
           <div key={i} className="task-metric-card-box green-theme-card">
@@ -110,7 +108,6 @@ export default function TechnikaTasks() {
         ))}
       </section>
 
-      {/* Primary Tabular Registry Canvas */}
       <main className="tasks-tabular-data-board">
         <table className="tasks-interactive-table">
           <thead>
@@ -153,7 +150,6 @@ export default function TechnikaTasks() {
           </tbody>
         </table>
 
-        {/* Footer Index Controls */}
         <footer className="table-pagination-footer-bar">
           <span className="pagination-counter-legend">Showing 1–{filteredTasks.length} of {filteredTasks.length} tasks</span>
           <div className="pagination-navigation-actions-cluster">
@@ -167,6 +163,8 @@ export default function TechnikaTasks() {
           </div>
         </footer>
       </main>
+
+      <AddTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }

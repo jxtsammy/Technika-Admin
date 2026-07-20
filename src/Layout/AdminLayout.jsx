@@ -5,7 +5,7 @@ import TaskMonitoring from '../components/TaskMonitoring/TaskMonitoring';
 import Technicians from '../components/Technicians/Technicians';
 import Analytics from '../components/Analytics/AnalyticsView';
 import AdminDashboard from '../components/Dashboard/AdminDashboard';
-import CustomerListing from '../components/Customers/CustomerListing/CustomerListing';
+import CustomerListing from '../components/Customers/ClientListing/CustomerListing';
 import Chat from '../components/ChatSystem/Chat/Chat';
 import Settings from '../components/Settings/Settings'
 import Map from '../components/Map/Map'
