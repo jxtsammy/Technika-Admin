@@ -265,10 +265,10 @@
   height: 100%;
   background: repeating-linear-gradient(
     -45deg,
-    #e5e7eb,
-    #e5e7eb 4px,
-    #eae8e8 4px,
-    #eae8e8 8px
+    #ffffff,
+    #ffffff 4px,
+    #ffffff 4px,
+    #ffffff 8px
   );
   border: 1px dashed #d1d5db;
   box-sizing: border-box;

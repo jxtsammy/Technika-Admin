@@ -1,15 +1,114 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import './Technicians.css';
-import Profile from '../../assets/profile.png'
+import Profile from '../../assets/profile.png';
+import TechnicianDetailsModal from './TechnicianDetails/TechnicianProfileModal';
 
 const INITIAL_TECHNICIANS = [
-  { id: 'TECH-001', name: 'Marcus Chen', email: 'm.chen@teknica.com', phone: '+1 (555) 123-4567', status: 'Active', assignment: 'Main Power Grid Repair', assignmentStatus: 'In Progress', avatar: {Profile} },
-  { id: 'TECH-002', name: 'Sarah Jenkins', email: 's.jenkins@teknica.com', phone: '+1 (555) 987-6543', status: 'Active', assignment: 'Routine Substation Inspection', assignmentStatus: 'Pending', avatar: 'https://via.placeholder.com/40' },
-  { id: 'TECH-003', name: 'Robert Miller', email: 'r.miller@teknica.com', phone: '+1 (555) 456-7890', status: 'Inactive', assignment: 'No Active Task', assignmentStatus: '', avatar: 'https://via.placeholder.com/40' },
-  { id: 'TECH-004', name: 'Elena Rodriguez', email: 'e.rodriguez@teknica.com', phone: '+1 (555) 222-3333', status: 'Active', assignment: 'Fiber Optic Installation', assignmentStatus: 'In Progress', avatar: 'https://via.placeholder.com/40' },
-  { id: 'TECH-005', name: 'David Wilson', email: 'd.wilson@teknica.com', phone: '+1 (555) 777-8888', status: 'Active', assignment: 'Hydraulic Valve Replacement', assignmentStatus: 'Pending', avatar: 'https://via.placeholder.com/40' },
-  { id: 'TECH-006', name: 'Alana Parker', email: 'a.parker@teknica.com', phone: '+1 (555) 333-4444', status: 'Active', assignment: 'Server Rack Optimization', assignmentStatus: 'In Progress', avatar: 'https://via.placeholder.com/40' },
-  { id: 'TECH-007', name: 'James Thorne', email: 'j.thorne@teknica.com', phone: '+1 (555) 555-6666', status: 'Inactive', assignment: 'No Active Task', assignmentStatus: '', avatar: 'https://via.placeholder.com/40' }
+  {
+    id: 'TECH-001',
+    name: 'Tomiwa Oyeledu Dolapo',
+    email: 'tomilola@me.com',
+    phone: '09034867656',
+    status: 'Active',
+    assignment: 'Main Power Grid Repair',
+    assignmentStatus: 'In Progress',
+    avatar: Profile,
+    gender: 'Female',
+    dob: 'August 27th, 1999',
+    nationality: 'Nigerian',
+    address: 'No 35 Jimmy Ebi Street',
+    city: 'Yenagoa',
+    state: 'Bayelsa',
+    country: 'Nigeria',
+    totalOperations: 42,
+    completedOperations: 38,
+    pendingOperations: 4,
+    avgCompletionTime: '2.4 hrs'
+  },
+  {
+    id: 'TECH-002',
+    name: 'Sarah Jenkins',
+    email: 's.jenkins@teknica.com',
+    phone: '+1 (555) 987-6543',
+    status: 'Active',
+    assignment: 'Routine Substation Inspection',
+    assignmentStatus: 'Pending',
+    avatar: 'https://via.placeholder.com/150',
+    gender: 'Female',
+    dob: 'May 14th, 1995',
+    nationality: 'Ghanaian',
+    address: '12 Independence Ave',
+    city: 'Accra',
+    state: 'Greater Accra',
+    country: 'Ghana',
+    totalOperations: 29,
+    completedOperations: 25,
+    pendingOperations: 4,
+    avgCompletionTime: '3.1 hrs'
+  },
+  {
+    id: 'TECH-003',
+    name: 'Robert Miller',
+    email: 'r.miller@teknica.com',
+    phone: '+1 (555) 456-7890',
+    status: 'Inactive',
+    assignment: 'No Active Task',
+    assignmentStatus: '',
+    avatar: 'https://via.placeholder.com/150',
+    gender: 'Male',
+    dob: 'November 03, 1991',
+    nationality: 'Nigerian',
+    address: '88 Ring Road',
+    city: 'Ibadan',
+    state: 'Oyo',
+    country: 'Nigeria',
+    totalOperations: 15,
+    completedOperations: 12,
+    pendingOperations: 3,
+    avgCompletionTime: '4.0 hrs'
+  },
+  {
+    id: 'TECH-004',
+    name: 'Elena Rodriguez',
+    email: 'e.rodriguez@teknica.com',
+    phone: '+1 (555) 222-3333',
+    status: 'Active',
+    assignment: 'Fiber Optic Installation',
+    assignmentStatus: 'In Progress',
+    avatar: 'https://via.placeholder.com/150',
+    gender: 'Female',
+    dob: 'March 19, 1997',
+    nationality: 'Ghanaian',
+    address: '45 Lake View St',
+    city: 'Kumasi',
+    state: 'Ashanti',
+    country: 'Ghana',
+    totalOperations: 56,
+    completedOperations: 52,
+    pendingOperations: 4,
+    avgCompletionTime: '1.8 hrs'
+  },
+  {
+    id: 'TECH-005',
+    name: 'David Wilson',
+    email: 'd.wilson@teknica.com',
+    phone: '+1 (555) 777-8888',
+    status: 'Active',
+    assignment: 'Hydraulic Valve Replacement',
+    assignmentStatus: 'Pending',
+    avatar: 'https://via.placeholder.com/150',
+    gender: 'Male',
+    dob: 'January 10, 1993',
+    nationality: 'Nigerian',
+    address: '14 Marina Road',
+    city: 'Lagos',
+    state: 'Lagos',
+    country: 'Nigeria',
+    totalOperations: 33,
+    completedOperations: 30,
+    pendingOperations: 3,
+    avgCompletionTime: '2.9 hrs'
+  }
 ];
 
 export default function Technicians() {
@@ -18,6 +117,10 @@ export default function Technicians() {
   const [filterCriteria, setFilterCriteria] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [activeMenuId, setActiveMenuId] = useState(null);
+
+  // Modal & Index Tracking State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTechIndex, setSelectedTechIndex] = useState(0);
 
   const ITEMS_PER_PAGE = 5;
   const menuRef = useRef(null);
@@ -68,6 +171,27 @@ export default function Technicians() {
   const handleRemove = (id) => {
     setTechnicians(prev => prev.filter(tech => tech.id !== id));
     setActiveMenuId(null);
+  };
+
+  // Open modal and compute selected index relative to filtered list
+  const handleOpenDetailsModal = (tech) => {
+    const index = filteredTechnicians.findIndex(t => t.id === tech.id);
+    setSelectedTechIndex(index !== -1 ? index : 0);
+    setIsModalOpen(true);
+    setActiveMenuId(null);
+  };
+
+  // Modal navigation callbacks
+  const handlePrevProfile = () => {
+    if (selectedTechIndex > 0) {
+      setSelectedTechIndex(prev => prev - 1);
+    }
+  };
+
+  const handleNextProfile = () => {
+    if (selectedTechIndex < filteredTechnicians.length - 1) {
+      setSelectedTechIndex(prev => prev + 1);
+    }
   };
 
   return (
@@ -158,7 +282,7 @@ export default function Technicians() {
                     <div className="technicians-tech-profile-cell">
                       <div className="technicians-profile-image-circle">
                         <img
-                          src={Profile}
+                          src={tech.avatar || Profile}
                           alt={tech.name}
                           className="technicians-avatar-img"
                         />
@@ -204,7 +328,7 @@ export default function Technicians() {
 
                     {activeMenuId === tech.id && (
                       <div className="technicians-actions-fade-menu" ref={menuRef}>
-                        <button className="technicians-menu-action-item" onClick={() => setActiveMenuId(null)}>
+                        <button className="technicians-menu-action-item" onClick={() => handleOpenDetailsModal(tech)}>
                           <i className="far fa-eye"></i> View Details
                         </button>
                         <button className="technicians-menu-action-item technicians-remove" onClick={() => handleRemove(tech.id)}>
@@ -270,6 +394,18 @@ export default function Technicians() {
           <p>Technicians marked as "Inactive" for more than 14 days without an approved leave request should be reviewed for deactivation. Ensure all contact information is kept up-to-date for emergency dispatch protocols.</p>
         </div>
       </footer>
+
+      {/* External Details Modal with Profile Navigation */}
+      <TechnicianDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        technician={filteredTechnicians[selectedTechIndex]}
+        allTechnicians={filteredTechnicians}
+        currentIndex={selectedTechIndex}
+        onPrev={handlePrevProfile}
+        onNext={handleNextProfile}
+        defaultAvatar={Profile}
+      />
     </div>
   );
 }
