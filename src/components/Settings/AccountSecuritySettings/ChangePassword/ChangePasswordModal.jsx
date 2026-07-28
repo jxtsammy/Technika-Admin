@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './ChangePassword.css';
 import securityGraphic from '../../../../assets/passwordChnage.jpg'; // Replace with your local asset reference
+import { usersApi } from '../../../../api/services';
 
 export default function ChangePasswordModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
@@ -10,12 +11,13 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
   const handleInputChange = (e) => {
-    const { value } = e.target;
-    setFormData((prev) => ({ ...prev, name: value }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError('');
   };
 
@@ -26,8 +28,9 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
     return password.length >= 8 && hasLetter && hasNumber;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
 
     if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
       setError('Please fill in all fields.');
@@ -44,9 +47,17 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
       return;
     }
 
-    // Success logic mock
+    setSubmitting(true);
     setError('');
-    setSuccess(true);
+    try {
+      await usersApi.changePassword(formData.currentPassword, formData.newPassword);
+      setSuccess(true);
+      setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err) {
+      setError(err.message || 'Failed to update password.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -110,8 +121,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                   </div>
                 </div>
 
-                <button type="submit" className="modal-submit-btn">
-                  Update Password <i className="fa-solid fa-arrow-right"></i>
+                <button type="submit" className="modal-submit-btn" disabled={submitting}>
+                  {submitting ? 'Updating…' : 'Update Password'} <i className="fa-solid fa-arrow-right"></i>
                 </button>
               </form>
             </>

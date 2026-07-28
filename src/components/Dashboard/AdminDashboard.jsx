@@ -1,12 +1,58 @@
 import { useState, useEffect } from 'react';
+import { tasksApi, usersApi, fullName } from '../../api/services';
+import { getStoredUser } from '../../api/client';
 import './AdminDashboard.css';
+
+const TASK_COLORS = ['#ec4899', '#3b82f6', '#0d9488', '#eab308', '#a855f7'];
 
 export default function Dashboard() {
   const [time, setTime] = useState(new Date());
+  const [stats, setStats] = useState({ available: 0, completed: 0, pending: 0 });
+  const [technicianCount, setTechnicianCount] = useState(0);
+  const [assignedTasks, setAssignedTasks] = useState([]);
+  const [monthly, setMonthly] = useState([]);
+  const currentUser = getStoredUser();
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [taskStats, technicians, tasks, monthlyStats] = await Promise.all([
+          tasksApi.stats(),
+          usersApi.getTechnicians(),
+          tasksApi.list(),
+          tasksApi.monthlyStats(),
+        ]);
+        if (cancelled) return;
+
+        setStats(taskStats);
+        setTechnicianCount(technicians.length);
+        setMonthly(monthlyStats);
+        setAssignedTasks(
+          tasks
+            .filter((t) => t.assignedTo && t.status !== 'completed')
+            .slice(0, 5)
+            .map((t, idx) => ({
+              taskTitle: t.title,
+              technicianAssigned: fullName(t.assignedTo),
+              color: TASK_COLORS[idx % TASK_COLORS.length],
+            }))
+        );
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err.message);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const timeString = time.toLocaleTimeString('en-US', {
@@ -21,23 +67,29 @@ export default function Dashboard() {
   const dayOfMonth = time.getDate();
   const monthName = time.toLocaleDateString('en-US', { month: 'long' });
 
-  const analyticsData = [
-    { day: 'S', type: 'striped' },
-    { day: 'M', type: 'solid-green' },
-    { day: 'T', type: 'active-mint', label: '74%' },
-    { day: 'W', type: 'dark-green' },
-    { day: 'T', type: 'striped' },
-    { day: 'F', type: 'striped' },
-    { day: 'S', type: 'striped' }
-  ];
+  const totalTasks = stats.available + stats.pending + stats.completed;
 
-  const assignedTasks = [
-    { taskTitle: 'Fix Bill Counter Sensor Error', technicianAssigned: 'Kwame Mensah', color: '#ec4899', icon: '🔧' },
-    { taskTitle: 'Onboard Bank Cashier Team', technicianAssigned: 'Abena Osei', color: '#3b82f6', icon: '👥' },
-    { taskTitle: 'Deliver 5 Mixed Note Counters', technicianAssigned: 'Kofi Boateng', color: '#0d9488', icon: '📦' },
-    { taskTitle: 'Routine Maintenance on Coin Sorter', technicianAssigned: 'Yaw Appiah', color: '#eab308', icon: '⚙️' },
-    { taskTitle: 'Calibrate Heavy-Duty Counter', technicianAssigned: 'Esi Ansah', color: '#a855f7', icon: '📐' }
-  ];
+  // Monthly completed-task chart (last 6 months from the backend), rendered
+  // into the existing pill-chart design. Tallest month gets the highlight.
+  const maxCompleted = Math.max(1, ...monthly.map((m) => m.completed));
+  const analyticsData = monthly.map((m, idx) => {
+    const isMax = m.completed === maxCompleted && m.completed > 0;
+    return {
+      day: m.month,
+      type: isMax ? 'active-mint' : m.completed > 0 ? 'solid-green' : 'striped',
+      label: isMax ? `${m.completed}` : null,
+      heightPct: Math.round((m.completed / maxCompleted) * 100),
+      key: idx,
+    };
+  });
+
+  const adminName = fullName(currentUser) || 'Admin';
+  const initials = adminName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <div className="exact-dashboard-wrapper">
@@ -49,11 +101,11 @@ export default function Dashboard() {
 
         <div className="header-profile-badge">
           <div className="profile-badge-avatar">
-            <span role="img" aria-label="avatar">SS</span>
+            <span role="img" aria-label="avatar">{initials}</span>
           </div>
           <div className="profile-badge-details">
-            <span className="profile-badge-name">Samuel Sallo</span>
-            <span className="profile-badge-email">ssallo1012@gmail.com</span>
+            <span className="profile-badge-name">{adminName}</span>
+            <span className="profile-badge-email">{currentUser?.email || ''}</span>
           </div>
         </div>
       </header>
@@ -66,10 +118,9 @@ export default function Dashboard() {
                 <span className="m-title">Total Technicians</span>
                 <span className="m-arrow">↗</span>
               </div>
-              <h2 className="m-value">24</h2>
+              <h2 className="m-value">{technicianCount}</h2>
               <div className="m-footer">
-                <span className="m-badge">5</span>
-                <span className="m-footer-txt">Increased from last month</span>
+                <span className="m-footer-txt">Registered technicians</span>
               </div>
             </div>
 
@@ -78,22 +129,20 @@ export default function Dashboard() {
                 <span className="m-title">Total Tasks</span>
                 <span className="m-arrow dark">↗</span>
               </div>
-              <h2 className="m-value">10</h2>
+              <h2 className="m-value">{totalTasks}</h2>
               <div className="m-footer">
-                <span className="m-badge dark">6</span>
-                <span className="m-footer-txt">Increased from last month</span>
+                <span className="m-footer-txt">All operations</span>
               </div>
             </div>
 
             <div className="m-card plain-white">
               <div className="m-card-header">
-                <span className="m-title">Completed Today</span>
+                <span className="m-title">Completed</span>
                 <span className="m-arrow dark">↗</span>
               </div>
-              <h2 className="m-value">12</h2>
+              <h2 className="m-value">{stats.completed}</h2>
               <div className="m-footer">
-                <span className="m-badge dark">2</span>
-                <span className="m-footer-txt">Increased from last month</span>
+                <span className="m-footer-txt">Finished operations</span>
               </div>
             </div>
 
@@ -102,9 +151,9 @@ export default function Dashboard() {
                 <span className="m-title">Pending Assignment</span>
                 <span className="m-arrow dark">↗</span>
               </div>
-              <h2 className="m-value">2</h2>
+              <h2 className="m-value">{stats.available}</h2>
               <div className="m-footer">
-                <span className="m-footer-txt status-only">On Discuss</span>
+                <span className="m-footer-txt status-only">Awaiting start</span>
               </div>
             </div>
           </div>
@@ -113,10 +162,13 @@ export default function Dashboard() {
             <div className="panel-card flex-60">
               <h3>Work Analytics</h3>
               <div className="analytics-pill-chart spaced-graph">
-                {analyticsData.map((item, idx) => (
-                  <div key={idx} className="pill-chart-col">
+                {analyticsData.map((item) => (
+                  <div key={item.key} className="pill-chart-col">
                     <div className="pill-bar-track">
-                      <div className={`pill-bar-fill ${item.type}`}>
+                      <div
+                        className={`pill-bar-fill ${item.type}`}
+                        style={{ height: `${Math.max(item.heightPct, 8)}%` }}
+                      >
                         {item.label && (
                           <div className="pill-floating-tooltip">
                             {item.label}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { techniciansData } from './TechnicianData';
+import { usersApi, fullName } from '../../api/services';
 import './Map.css';
 
 // Fix for default Leaflet marker icon paths in React
@@ -11,6 +11,24 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
+
+// HQ reference point (Accra) used to compute each technician's distance
+const HQ_CENTER = [5.6037, -0.187];
+
+// How often to refresh live technician locations (ms)
+const LOCATION_POLL_MS = 30000;
+
+// Haversine distance in meters between two [lat, lng] points
+function distanceMeters([lat1, lng1], [lat2, lng2]) {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
 
 // Custom component to handle smooth flyTo panning navigation animations
 function MapRecenter({ center }) {
@@ -27,11 +45,53 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // all, online, offline
   const [sortBy, setSortBy] = useState('nearest'); // nearest, farthest
-  const [maxDistance, setMaxDistance] = useState(3000); // Filter parameter by meters
-  const [selectedTech, setSelectedTech] = useState(techniciansData[0]);
-  const [mapCenter, setMapCenter] = useState([51.505, -0.09]);
+  const [maxDistance, setMaxDistance] = useState(4000); // Filter parameter by meters
+  const [technicians, setTechnicians] = useState([]);
+  const [selectedTech, setSelectedTech] = useState(null);
+  const [mapCenter, setMapCenter] = useState(HQ_CENTER);
+  const [loading, setLoading] = useState(true);
 
   const defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80";
+
+  // Poll live technician locations from the backend
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const techs = await usersApi.getTechnicians();
+        if (cancelled) return;
+        setTechnicians(
+          techs
+            .filter((t) => t.location && t.location.latitude != null)
+            .map((t) => ({
+              id: t._id,
+              name: fullName(t),
+              status: t.isOnline ? 'online' : 'offline',
+              lat: t.location.latitude,
+              lng: t.location.longitude,
+              distance: distanceMeters(HQ_CENTER, [
+                t.location.latitude,
+                t.location.longitude,
+              ]),
+              avatar: t.profilePicture || null,
+              locationUpdatedAt: t.location.updatedAt,
+            }))
+        );
+      } catch (err) {
+        console.error('Failed to load technician locations:', err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    const timer = setInterval(load, LOCATION_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
 
   const handleTechClick = (tech) => {
     setSelectedTech(tech);
@@ -39,7 +99,7 @@ export default function MapScreen() {
   };
 
   // Filter and Sort Processing Pipeline
-  const filteredTechnicians = techniciansData
+  const filteredTechnicians = technicians
     .filter(tech => {
       const matchesSearch = tech.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || tech.status === statusFilter;
@@ -113,7 +173,7 @@ export default function MapScreen() {
                 onClick={() => handleTechClick(tech)}
               >
                 <div className="tech-card-left">
-                  <img src={defaultAvatar} alt={tech.name} className="tech-avatar-img" />
+                  <img src={tech.avatar || defaultAvatar} alt={tech.name} className="tech-avatar-img" />
                   <div className="tech-meta-details">
                     <h4>{tech.name}</h4>
                     <p className="tech-distance-text">
@@ -130,7 +190,7 @@ export default function MapScreen() {
           ) : (
             <div className="empty-search-fallback">
               <i className="fa-regular fa-user-xmark"></i>
-              <p>No technicians match your current filters.</p>
+              <p>{loading ? 'Loading technician locations…' : 'No technicians match your current filters.'}</p>
             </div>
           )}
         </div>
@@ -161,7 +221,10 @@ export default function MapScreen() {
             >
               <Popup>
                 <strong style={{ fontSize: '14px' }}>{tech.name}</strong><br />
-                <span style={{ color: '#6b7280', fontSize: '12px' }}>{tech.specialty}</span>
+                <span style={{ color: '#6b7280', fontSize: '12px' }}>
+                  {tech.status === 'online' ? 'Online' : 'Offline'}
+                  {tech.locationUpdatedAt && ` · updated ${new Date(tech.locationUpdatedAt).toLocaleTimeString()}`}
+                </span>
               </Popup>
             </Marker>
           ))}

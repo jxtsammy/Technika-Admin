@@ -1,25 +1,86 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './Profile.css';
+import { usersApi } from '../../../api/services';
+import { updateStoredUser, getStoredUser } from '../../../api/client';
 
 export default function SettingsScreen() {
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [statusMsg, setStatusMsg] = useState('');
   const [formData, setFormData] = useState({
-    fullName: 'Samuel Sallo',
-    email: 'ssallo1012@gmail.com',
-    phone: '+233 (0) 2572-56751',
+    fullName: '',
+    email: '',
+    phone: '',
   });
 
   // Set to null initially so we can render the default profile icon if empty
   const [avatar, setAvatar] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Load the real admin profile
+  useEffect(() => {
+    let cancelled = false;
+    usersApi
+      .getProfile()
+      .then((user) => {
+        if (cancelled) return;
+        setFormData({
+          fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          email: user.email || '',
+          phone: user.phoneNumber || '',
+        });
+        if (user.profilePicture) setAvatar(user.profilePicture);
+      })
+      .catch((err) => console.error('Failed to load profile:', err.message));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleToggleEdit = () => {
-    setIsEditing((prev) => !prev);
+  const handleToggleEdit = async () => {
+    if (!isEditing) {
+      setIsEditing(true);
+      setStatusMsg('');
+      return;
+    }
+
+    // Save mode: split fullName into first/last and persist
+    setSaving(true);
+    setStatusMsg('');
+    try {
+      const nameParts = formData.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || firstName;
+
+      const updated = await usersApi.updateProfile({
+        firstName,
+        lastName,
+        phoneNumber: formData.phone,
+        profilePicture: avatar,
+      });
+
+      // Keep sidebar/dashboard identity in sync
+      const stored = getStoredUser();
+      if (stored) {
+        updateStoredUser({
+          ...stored,
+          firstName: updated.firstName,
+          lastName: updated.lastName,
+        });
+      }
+
+      setIsEditing(false);
+      setStatusMsg('Profile updated successfully.');
+    } catch (err) {
+      setStatusMsg(`Failed to save: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleUploadClick = () => {
@@ -29,8 +90,10 @@ export default function SettingsScreen() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const objectURL = URL.createObjectURL(file);
-      setAvatar(objectURL);
+      // Store as a data URL so it can be persisted to the backend
+      const reader = new FileReader();
+      reader.onloadend = () => setAvatar(reader.result);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -65,8 +128,13 @@ export default function SettingsScreen() {
 
         {/* Right-aligned Small Edit Button */}
         <div className="header-actions">
-          <button onClick={handleToggleEdit} className="btn-primary">
-            {isEditing ? 'Save' : 'Edit'}
+          {statusMsg && (
+            <span style={{ fontSize: '0.85rem', color: statusMsg.startsWith('Failed') ? '#b3261e' : '#15803d', marginRight: '10px' }}>
+              {statusMsg}
+            </span>
+          )}
+          <button onClick={handleToggleEdit} className="btn-primary" disabled={saving}>
+            {saving ? 'Saving…' : isEditing ? 'Save' : 'Edit'}
           </button>
         </div>
       </div>
@@ -97,7 +165,7 @@ export default function SettingsScreen() {
               </div>
             </div>
 
-            {/* Email Address */}
+            {/* Email Address (login identifier — not editable) */}
             <div className="form-group">
               <label>Email Address</label>
               <div className="input-wrapper">
@@ -109,7 +177,8 @@ export default function SettingsScreen() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  disabled={!isEditing}
+                  disabled
+                  title="Email is your login identifier and cannot be changed"
                 />
               </div>
             </div>

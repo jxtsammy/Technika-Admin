@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { authApi } from '../../api/services';
+import { setSession } from '../../api/client';
 import './Login.css';
 
 export default function LoginScreen() {
@@ -7,20 +9,44 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (isLoading) return;
 
     setIsLoading(true);
-    console.log({ email, password, rememberMe });
+    setError('');
 
-    // Simulating authentication delay before navigating
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const data = await authApi.login(email, password);
+
+      if (data.role !== 'admin') {
+        setError('This account does not have administrator access.');
+        return;
+      }
+
+      setSession(
+        {
+          token: data.token,
+          user: {
+            _id: data._id,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            role: data.role,
+          },
+        },
+        rememberMe
+      );
+
       navigate('/admin');
-    }, 1500);
+    } catch (err) {
+      setError(err.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -46,6 +72,21 @@ export default function LoginScreen() {
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
+            {error && (
+              <div
+                className="login-error"
+                style={{
+                  background: '#fdecea',
+                  color: '#b3261e',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.9rem',
+                  marginBottom: '4px',
+                }}
+              >
+                {error}
+              </div>
+            )}
             <div className="form-group">
               <label htmlFor="email">Email address</label>
               <input

@@ -1,8 +1,57 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './CustomerListing.css';
 import noClients from '../../../assets/noPosts.png';
 import AddClientModal from '../AddClient/AddClientModal';
 import ClientDetailsModal from '../ClientProfile/ClientProfileModal';
+import { customersApi, tasksApi } from '../../../api/services';
+
+const DEFAULT_AVATAR =
+  'https://ui-avatars.com/api/?background=dbeafe&color=1d4ed8&name=';
+
+// Customers onboarded in the last 30 days count as "new"
+const NEW_CLIENT_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+function formatOnboardingDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+// Map a backend customer doc (+ this client's tasks) into the card shape
+function toClientCard(customer, tasks) {
+  const clientTasks = tasks.filter(
+    (t) => (t.companyName || '').toLowerCase() === customer.name.toLowerCase()
+  );
+  const completed = clientTasks.filter((t) => t.status === 'completed').length;
+  const ongoing = clientTasks.filter((t) => t.status === 'pending').length;
+  const pending = clientTasks.filter((t) => t.status === 'available').length;
+
+  return {
+    id: customer._id,
+    name: customer.name,
+    email: customer.email || '—',
+    phone: customer.phone,
+    type:
+      Date.now() - new Date(customer.createdAt).getTime() < NEW_CLIENT_WINDOW_MS
+        ? 'new'
+        : 'all',
+    avatar:
+      customer.avatar || `${DEFAULT_AVATAR}${encodeURIComponent(customer.name)}`,
+    clientType: 'Bank',
+    onboardingDate: formatOnboardingDate(customer.createdAt),
+    location: customer.location,
+    city: customer.city || '—',
+    state: customer.state || '—',
+    country: customer.country || '—',
+    totalProjects: clientTasks.length,
+    completedServices: completed,
+    ongoingRequests: ongoing,
+    pendingRequests: pending,
+  };
+}
 
 export default function ClientsDashboard() {
   const [activeTab, setActiveTab] = useState('all');
@@ -14,186 +63,38 @@ export default function ClientsDashboard() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedClientIndex, setSelectedClientIndex] = useState(0);
 
-  const [bankClients, setBankClients] = useState([
-    {
-      id: 1,
-      name: 'GCB Bank PLC',
-      email: 'info@gcbbank.com.gh',
-      phone: '(030) 266-4911',
-      type: 'all',
-      avatar: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a?w=150&h=150&fit=crop',
-      clientType: 'Bank',
-      onboardingDate: 'August 27th, 2022',
-      location: 'High Street, Accra Central',
-      city: 'Accra',
-      state: 'Greater Accra',
-      country: 'Ghana',
-      totalProjects: 34,
-      completedServices: 30,
-      ongoingRequests: 4,
-      pendingRequests: 2
-    },
-    {
-      id: 2,
-      name: 'Ecobank Ghana',
-      email: 'contact@ecobank.com',
-      phone: '(030) 221-3999',
-      type: 'all',
-      avatar: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&h=150&fit=crop',
-      clientType: 'Bank',
-      onboardingDate: 'January 15th, 2023',
-      location: '28 Independence Avenue',
-      city: 'Accra',
-      state: 'Greater Accra',
-      country: 'Ghana',
-      totalProjects: 28,
-      completedServices: 25,
-      ongoingRequests: 3,
-      pendingRequests: 1
-    },
-    {
-      id: 3,
-      name: 'Absa Bank Ghana',
-      email: 'absa.ghana@absa.africa',
-      phone: '(030) 242-9100',
-      type: 'all',
-      avatar: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?w=150&h=150&fit=crop',
-      clientType: 'Bank',
-      onboardingDate: 'November 10th, 2021',
-      location: 'Absa House, High Street',
-      city: 'Accra',
-      state: 'Greater Accra',
-      country: 'Ghana',
-      totalProjects: 42,
-      completedServices: 39,
-      ongoingRequests: 3,
-      pendingRequests: 0
-    },
-    {
-      id: 4,
-      name: 'Stanbic Bank Ghana',
-      email: 'customercare@stanbic.com.gh',
-      phone: '(030) 281-5700',
-      type: 'all',
-      avatar: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=150&h=150&fit=crop',
-      clientType: 'Bank',
-      onboardingDate: 'March 04th, 2022',
-      location: 'Stanbic Heights, Airport City',
-      city: 'Accra',
-      state: 'Greater Accra',
-      country: 'Ghana',
-      totalProjects: 19,
-      completedServices: 17,
-      ongoingRequests: 2,
-      pendingRequests: 1
-    },
-    {
-      id: 5,
-      name: 'Fidelity Bank Ghana',
-      email: 'info@fidelitybank.com.gh',
-      phone: '(030) 221-4490',
-      type: 'new',
-      avatar: 'https://images.unsplash.com/photo-1512403754473-278556139b0e?w=150&h=150&fit=crop',
-      clientType: 'Bank',
-      onboardingDate: 'May 12th, 2024',
-      location: 'Ridge Towers, Ridge',
-      city: 'Accra',
-      state: 'Greater Accra',
-      country: 'Ghana',
-      totalProjects: 8,
-      completedServices: 6,
-      ongoingRequests: 2,
-      pendingRequests: 3
-    },
-    {
-      id: 6,
-      name: 'Standard Chartered',
-      email: 'talk.to-us@sc.com',
-      phone: '(030) 261-0750',
-      type: 'all',
-      avatar: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=150&h=150&fit=crop',
-      clientType: 'Bank',
-      onboardingDate: 'February 20th, 2021',
-      location: 'SCB Building, High Street',
-      city: 'Accra',
-      state: 'Greater Accra',
-      country: 'Ghana',
-      totalProjects: 51,
-      completedServices: 48,
-      ongoingRequests: 3,
-      pendingRequests: 1
-    },
-    {
-      id: 7,
-      name: 'Zenith Bank Ghana',
-      email: 'info@zenithbank.com.gh',
-      phone: '(030) 261-1500',
-      type: 'all',
-      avatar: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=150&h=150&fit=crop',
-      clientType: 'Bank',
-      onboardingDate: 'October 08th, 2022',
-      location: 'Premier Towers, Liberia Road',
-      city: 'Accra',
-      state: 'Greater Accra',
-      country: 'Ghana',
-      totalProjects: 22,
-      completedServices: 20,
-      ongoingRequests: 2,
-      pendingRequests: 0
-    },
-    {
-      id: 8,
-      name: 'CalBank PLC',
-      email: 'customercare@calbank.net',
-      phone: '(030) 268-0068',
-      type: 'new',
-      avatar: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=150&h=150&fit=crop',
-      clientType: 'Bank',
-      onboardingDate: 'June 01st, 2024',
-      location: '23 Independence Avenue',
-      city: 'Accra',
-      state: 'Greater Accra',
-      country: 'Ghana',
-      totalProjects: 5,
-      completedServices: 4,
-      ongoingRequests: 1,
-      pendingRequests: 2
-    },
-    {
-      id: 9,
-      name: 'Consolidated Bank Ghana',
-      email: 'info@cbg.com.gh',
-      phone: '(030) 221-6000',
-      type: 'all',
-      avatar: 'https://images.unsplash.com/photo-1542744094-3a31f103e35f?w=150&h=150&fit=crop',
-      clientType: 'Bank',
-      onboardingDate: 'September 19th, 2023',
-      location: 'Manet Tower 3, Airport City',
-      city: 'Accra',
-      state: 'Greater Accra',
-      country: 'Ghana',
-      totalProjects: 16,
-      completedServices: 14,
-      ongoingRequests: 2,
-      pendingRequests: 1
-    }
-  ]);
+  const [bankClients, setBankClients] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleCreateClient = (newClient) => {
-    const formattedNewClient = {
-      clientType: 'Bank',
-      onboardingDate: 'Just Now',
-      location: 'Main Branch Office',
-      city: 'Accra',
-      state: 'Greater Accra',
-      country: 'Ghana',
-      totalProjects: 0,
-      completedServices: 0,
-      ongoingRequests: 0,
-      pendingRequests: 0,
-      ...newClient
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [customers, tasks] = await Promise.all([
+          customersApi.list(),
+          tasksApi.list().catch(() => []),
+        ]);
+        if (!cancelled) {
+          setBankClients(customers.map((c) => toClientCard(c, tasks)));
+        }
+      } catch (err) {
+        console.error('Failed to load clients:', err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
-    setBankClients((prevClients) => [formattedNewClient, ...prevClients]);
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleCreateClient = (createdCustomer) => {
+    // createdCustomer is the real backend doc returned from POST /customers
+    setBankClients((prevClients) => [
+      toClientCard(createdCustomer, []),
+      ...prevClients,
+    ]);
   };
 
   const filteredBanks = bankClients.filter(bank => {
@@ -323,8 +224,8 @@ export default function ClientsDashboard() {
             alt="No clients found illustration"
             className="empty-state-fallback-img"
           />
-          <h3>No clients found</h3>
-          <p>We couldn't find any clients matching your current selection parameters or active search filters.</p>
+          <h3>{loading ? 'Loading clients…' : 'No clients found'}</h3>
+          <p>{loading ? 'Fetching your client records from the server.' : "We couldn't find any clients matching your current selection parameters or active search filters."}</p>
         </div>
       )}
 

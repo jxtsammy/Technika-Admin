@@ -1,104 +1,61 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import './AnalyticsView.css';
 import OperationReportModal from './OperationsReport/ReportModal';
+import { tasksApi, fullName, capitalize } from '../../api/services';
 
-const MOCK_TASKS = [
-  {
-    id: 'TK-4921',
-    desc: 'High-Voltage Transformer Maintenance',
-    tech: 'Marcus Chen',
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80',
-    location: 'North Substation A12',
-    completedAt: '2024-05-15 14:30',
-    duration: '2h 45m',
+const DEFAULT_AVATAR =
+  'https://ui-avatars.com/api/?background=e2e8f0&color=475569&name=';
+
+function formatDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return `${d.toLocaleDateString('en-CA')} ${d.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })}`;
+}
+
+function formatDuration(startIso, endIso) {
+  if (!startIso || !endIso) return '—';
+  const mins = Math.round((new Date(endIso) - new Date(startIso)) / 60000);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+}
+
+// Map a completed backend task into the archive-row shape
+function toArchiveRow(task) {
+  const techName = task.assignedTo ? fullName(task.assignedTo) : 'Unassigned';
+  return {
+    id: task._id,
+    shortId: `TK-${task._id.slice(-4).toUpperCase()}`,
+    desc: task.title,
+    tech: techName,
+    avatar: `${DEFAULT_AVATAR}${encodeURIComponent(techName)}`,
+    location: task.location?.address || task.companyName || '—',
+    completedAtRaw: task.completedAt,
+    completedAt: formatDateTime(task.completedAt),
+    duration: formatDuration(task.acknowledgedAt, task.completedAt),
     status: 'Completed',
-    companyName: 'Volta Power Grid Corp',
-    clientPhone: '+233 24 123 4567',
-    operationTitle: 'Transformer Oil Analysis & Terminal Check',
-    priorityLevel: 'High',
-    summary: 'Conducted a thorough inspection of the high-voltage transformer at North Substation A12. Tested insulation resistance, verified terminal connections, and replaced degraded oil gaskets. System is running at optimal efficiency with no further immediate anomalies detected.',
-    photoEvidences: [
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&q=80',
-      'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800&q=80'
-    ]
-  },
-  {
-    id: 'TK-4883',
-    desc: 'Fiber Optic Line Repair',
-    tech: 'Sarah Jenkins',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
-    location: 'Central Hub - Floor 4',
-    completedAt: '2024-05-15 11:20',
-    duration: '1h 15m',
-    status: 'Completed',
-    companyName: 'Apex Data Communications',
-    clientPhone: '+233 50 987 6543',
-    operationTitle: 'Fiber Fusion Splicing',
-    priorityLevel: 'Critical',
-    summary: 'Spliced 12 severed fibers in main riser cable trunkline on Floor 4. Optical time-domain reflectometer (OTDR) tests confirm signal attenuation returned to normal levels below 0.2 dB loss.',
-    photoEvidences: [
-      'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=800&q=80'
-    ]
-  },
-  {
-    id: 'TK-4870',
-    desc: 'Industrial HVAC Filter Replacement',
-    tech: 'David Rodriguez',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
-    location: 'South Manufacturing Plant',
-    completedAt: '2024-05-14 16:45',
-    duration: '45m',
-    status: 'Not Completed',
-    companyName: 'GoldCoast Logistics Ltd',
-    clientPhone: '+233 20 555 0192',
-    operationTitle: 'HVAC Air Handler Cleaning',
-    priorityLevel: 'Medium',
-    summary: 'Attempted filter replacement on Air Handler #3. Work halted because access keys to the mechanical roof penthouses were unavailable from facility security. Rescheduled for tomorrow morning.',
-    photoEvidences: []
-  },
-  {
-    id: 'TK-4852',
-    desc: 'Generator Load Test',
-    tech: 'Elena Rossi',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&q=80',
-    location: 'East Emergency Backup',
-    completedAt: '2024-05-14 09:15',
-    duration: '3h 20m',
-    status: 'Completed',
-    companyName: 'Metropolitan Hospital Centre',
-    clientPhone: '+233 27 444 8811',
-    operationTitle: 'Annual 100% Capacity Load Bank Test',
-    priorityLevel: 'High',
-    summary: 'Ran 500kW diesel generator at 100% rated load for 3 continuous hours. Monitored exhaust temps, oil pressure, and frequency stability. All parameters remained well within specs.',
-    photoEvidences: [
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&q=80'
-    ]
-  },
-  {
-    id: 'TK-4841',
-    desc: 'Solar Panel Array Cleaning',
-    tech: 'Marcus Chen',
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80',
-    location: 'Rooftop Sector 7',
-    completedAt: '2024-05-13 15:50',
-    duration: '2h 10m',
-    status: 'Cancelled',
-    companyName: 'EcoPower Solutions',
-    clientPhone: '+233 24 333 2211',
-    operationTitle: 'Rooftop Photovoltaic Washing',
-    priorityLevel: 'Low',
-    summary: 'Task cancelled due to heavy sudden downpour and lightning safety risks on the metal roof structure. Client notified.',
-    photoEvidences: []
-  }
-];
+    companyName: task.companyName || '—',
+    clientPhone: task.callerPhone || '—',
+    operationTitle: task.title,
+    priorityLevel: capitalize(task.priority),
+    summary: task.completionNote || 'No completion note was provided by the technician.',
+    photoEvidences: [],
+  };
+}
 
 export default function AnalyticsView() {
-  const [startDate, setStartDate] = useState('2024-05-01');
-  const [endDate, setEndDate] = useState('2024-05-31');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedTech, setSelectedTech] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All Statuses');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [archivedTasks, setArchivedTasks] = useState([]);
+  const [stats, setStats] = useState({ completed: 0, averageCompletionMinutes: 0 });
+  const [loading, setLoading] = useState(true);
 
   // Action Menu & Modal States
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -107,22 +64,62 @@ export default function AnalyticsView() {
 
   const recordsPerPage = 5;
 
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [tasks, taskStats] = await Promise.all([
+          tasksApi.list(),
+          tasksApi.stats(),
+        ]);
+        if (cancelled) return;
+        setArchivedTasks(
+          tasks.filter((t) => t.status === 'completed').map(toArchiveRow)
+        );
+        setStats(taskStats);
+      } catch (err) {
+        console.error('Failed to load operational history:', err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const technicianOptions = useMemo(
+    () => [...new Set(archivedTasks.map((t) => t.tech))],
+    [archivedTasks]
+  );
+
   const handleReset = () => {
-    setStartDate('2024-05-01');
-    setEndDate('2024-05-31');
+    setStartDate('');
+    setEndDate('');
     setSelectedTech('All');
     setSelectedStatus('All Statuses');
     setSearchQuery('');
     setCurrentPage(1);
   };
 
-  const filteredTasks = MOCK_TASKS.filter(task => {
+  const filteredTasks = archivedTasks.filter(task => {
     const matchesTech = selectedTech === 'All' || task.tech === selectedTech;
     const matchesStatus = selectedStatus === 'All Statuses' || task.status === selectedStatus;
-    const matchesSearch = task.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = task.shortId.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           task.desc.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTech && matchesStatus && matchesSearch;
+    // Date-range filter on completion date
+    const completedTime = task.completedAtRaw ? new Date(task.completedAtRaw).getTime() : null;
+    const matchesStart = !startDate || (completedTime !== null && completedTime >= new Date(startDate).getTime());
+    const matchesEnd = !endDate || (completedTime !== null && completedTime <= new Date(endDate).getTime() + 24 * 60 * 60 * 1000 - 1);
+    return matchesTech && matchesStatus && matchesSearch && matchesStart && matchesEnd;
   });
+
+  const avgMinutes = stats.averageCompletionMinutes || 0;
+  const avgTimeDisplay =
+    avgMinutes >= 60
+      ? `${Math.floor(avgMinutes / 60)}h ${avgMinutes % 60}m`
+      : `${avgMinutes}m`;
 
   const totalRecords = filteredTasks.length;
   const totalPages = Math.ceil(totalRecords / recordsPerPage) || 1;
@@ -171,8 +168,7 @@ export default function AnalyticsView() {
             <div className="icon-badge complete-bg"><i className="fas fa-check-circle"></i></div>
           </div>
           <div className="metric-value-row">
-            <h2>1,248</h2>
-            <span className="trend-indicator trend-up"><i className="fas fa-arrow-up"></i> 12%</span>
+            <h2>{stats.completed}</h2>
           </div>
         </div>
 
@@ -182,30 +178,27 @@ export default function AnalyticsView() {
             <div className="icon-badge time-bg"><i className="fas fa-clock"></i></div>
           </div>
           <div className="metric-value-row">
-            <h2>2h 14m</h2>
-            <span className="trend-indicator trend-up"><i className="fas fa-arrow-down"></i> 5m</span>
+            <h2>{avgTimeDisplay}</h2>
           </div>
         </div>
 
         <div className="metric-card-item">
           <div className="metric-card-header">
-            <span className="metric-title">Exception Rate</span>
+            <span className="metric-title">In Progress</span>
             <div className="icon-badge error-bg"><i className="fas fa-exclamation-triangle"></i></div>
           </div>
           <div className="metric-value-row">
-            <h2>3.2%</h2>
-            <span className="trend-flat">Stable</span>
+            <h2>{stats.pending ?? 0}</h2>
           </div>
         </div>
 
         <div className="metric-card-item">
           <div className="metric-card-header">
-            <span className="metric-title">Total Distance</span>
+            <span className="metric-title">Awaiting Start</span>
             <div className="icon-badge distance-bg"><i className="fas fa-route"></i></div>
           </div>
           <div className="metric-value-row">
-            <h2>4,850 km</h2>
-            <span className="trend-indicator trend-up"><i className="fas fa-arrow-up"></i> 8.4%</span>
+            <h2>{stats.available ?? 0}</h2>
           </div>
         </div>
       </section>
@@ -232,10 +225,9 @@ export default function AnalyticsView() {
             <div className="select-dropdown-style">
               <select value={selectedTech} onChange={(e) => setSelectedTech(e.target.value)}>
                 <option value="All">All Technicians</option>
-                <option value="Marcus Chen">Marcus Chen</option>
-                <option value="Sarah Jenkins">Sarah Jenkins</option>
-                <option value="David Rodriguez">David Rodriguez</option>
-                <option value="Elena Rossi">Elena Rossi</option>
+                {technicianOptions.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -299,7 +291,7 @@ export default function AnalyticsView() {
             <tbody>
               {currentRecords.map((task) => (
                 <tr key={task.id}>
-                  <td className="styled-id-string">{task.id}</td>
+                  <td className="styled-id-string">{task.shortId}</td>
                   <td className="styled-desc-paragraph">{task.desc}</td>
                   <td>
                     <div className="avatar-chip-container">
@@ -339,6 +331,13 @@ export default function AnalyticsView() {
                   </td>
                 </tr>
               ))}
+              {currentRecords.length === 0 && (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: '#6b7280' }}>
+                    {loading ? 'Loading operational history…' : 'No archived operations match the active filters.'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
