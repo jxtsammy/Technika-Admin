@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import './AddClientModal.css';
 import clientGraphic from '../../../assets/clientHandshake.jpg';
+import { customersApi } from '../../../api/services';
 
 export default function AddClientModal({ isOpen, onClose, onCreateClient }) {
   const [bankName, setBankName] = useState('');
@@ -11,6 +12,8 @@ export default function AddClientModal({ isOpen, onClose, onCreateClient }) {
   const [country] = useState('Ghana'); // Non-editable state
   const [phone, setPhone] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const fileInputRef = useRef(null);
 
@@ -31,26 +34,35 @@ export default function AddClientModal({ isOpen, onClose, onCreateClient }) {
     fileInputRef.current.click();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (submitting) return;
 
-    const newClientData = {
-      name: bankName,
-      email,
-      phone,
-      location: branchLocation,
-      city,
-      state,
-      country,
-      avatar: imagePreview || 'https://via.placeholder.com/150',
-      type: 'new'
-    };
+    setSubmitting(true);
+    setSubmitError('');
 
-    if (onCreateClient) {
-      onCreateClient(newClientData);
+    try {
+      const created = await customersApi.create({
+        name: bankName,
+        email,
+        phone,
+        location: branchLocation,
+        city,
+        state,
+        country,
+        avatar: imagePreview || null,
+      });
+
+      if (onCreateClient) {
+        onCreateClient(created);
+      }
+
+      handleResetAndClose();
+    } catch (err) {
+      setSubmitError(err.message || 'Failed to create client');
+    } finally {
+      setSubmitting(false);
     }
-
-    handleResetAndClose();
   };
 
   const handleResetAndClose = () => {
@@ -203,8 +215,15 @@ export default function AddClientModal({ isOpen, onClose, onCreateClient }) {
             </div>
 
             <footer className="client-modal-panel-footer-row">
-              <button type="button" className="client-wizard-back-navigation-btn" onClick={handleResetAndClose}>Back</button>
-              <button type="submit" className="client-wizard-create-task-submit-btn">CREATE CLIENT</button>
+              {submitError && (
+                <span style={{ color: '#b3261e', fontSize: '0.85rem', marginRight: 'auto' }}>
+                  {submitError}
+                </span>
+              )}
+              <button type="button" className="client-wizard-back-navigation-btn" onClick={handleResetAndClose} disabled={submitting}>Back</button>
+              <button type="submit" className="client-wizard-create-task-submit-btn" disabled={submitting}>
+                {submitting ? 'CREATING…' : 'CREATE CLIENT'}
+              </button>
             </footer>
           </form>
         </div>

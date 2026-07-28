@@ -2,117 +2,63 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import './Technicians.css';
 import Profile from '../../assets/profile.png';
 import TechnicianDetailsModal from './TechnicianDetails/TechnicianProfileModal';
+import { usersApi, tasksApi, fullName, statusLabel } from '../../api/services';
 
-const INITIAL_TECHNICIANS = [
-  {
-    id: 'TECH-001',
-    name: 'Tomiwa Oyeledu Dolapo',
-    email: 'tomilola@me.com',
-    phone: '09034867656',
-    status: 'Active',
-    assignment: 'Main Power Grid Repair',
-    assignmentStatus: 'In Progress',
-    avatar: Profile,
-    gender: 'Female',
-    dob: 'August 27th, 1999',
-    nationality: 'Nigerian',
-    address: 'No 35 Jimmy Ebi Street',
-    city: 'Yenagoa',
-    state: 'Bayelsa',
-    country: 'Nigeria',
-    totalOperations: 42,
-    completedOperations: 38,
-    pendingOperations: 4,
-    avgCompletionTime: '2.4 hrs'
-  },
-  {
-    id: 'TECH-002',
-    name: 'Sarah Jenkins',
-    email: 's.jenkins@teknica.com',
-    phone: '+1 (555) 987-6543',
-    status: 'Active',
-    assignment: 'Routine Substation Inspection',
-    assignmentStatus: 'Pending',
-    avatar: 'https://via.placeholder.com/150',
-    gender: 'Female',
-    dob: 'May 14th, 1995',
-    nationality: 'Ghanaian',
-    address: '12 Independence Ave',
-    city: 'Accra',
-    state: 'Greater Accra',
-    country: 'Ghana',
-    totalOperations: 29,
-    completedOperations: 25,
-    pendingOperations: 4,
-    avgCompletionTime: '3.1 hrs'
-  },
-  {
-    id: 'TECH-003',
-    name: 'Robert Miller',
-    email: 'r.miller@teknica.com',
-    phone: '+1 (555) 456-7890',
-    status: 'Inactive',
-    assignment: 'No Active Task',
-    assignmentStatus: '',
-    avatar: 'https://via.placeholder.com/150',
-    gender: 'Male',
-    dob: 'November 03, 1991',
-    nationality: 'Nigerian',
-    address: '88 Ring Road',
-    city: 'Ibadan',
-    state: 'Oyo',
-    country: 'Nigeria',
-    totalOperations: 15,
-    completedOperations: 12,
-    pendingOperations: 3,
-    avgCompletionTime: '4.0 hrs'
-  },
-  {
-    id: 'TECH-004',
-    name: 'Elena Rodriguez',
-    email: 'e.rodriguez@teknica.com',
-    phone: '+1 (555) 222-3333',
-    status: 'Active',
-    assignment: 'Fiber Optic Installation',
-    assignmentStatus: 'In Progress',
-    avatar: 'https://via.placeholder.com/150',
-    gender: 'Female',
-    dob: 'March 19, 1997',
-    nationality: 'Ghanaian',
-    address: '45 Lake View St',
-    city: 'Kumasi',
-    state: 'Ashanti',
-    country: 'Ghana',
-    totalOperations: 56,
-    completedOperations: 52,
-    pendingOperations: 4,
-    avgCompletionTime: '1.8 hrs'
-  },
-  {
-    id: 'TECH-005',
-    name: 'David Wilson',
-    email: 'd.wilson@teknica.com',
-    phone: '+1 (555) 777-8888',
-    status: 'Active',
-    assignment: 'Hydraulic Valve Replacement',
-    assignmentStatus: 'Pending',
-    avatar: 'https://via.placeholder.com/150',
-    gender: 'Male',
-    dob: 'January 10, 1993',
-    nationality: 'Nigerian',
-    address: '14 Marina Road',
-    city: 'Lagos',
-    state: 'Lagos',
-    country: 'Nigeria',
-    totalOperations: 33,
-    completedOperations: 30,
-    pendingOperations: 3,
-    avgCompletionTime: '2.9 hrs'
+function formatDob(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+// Map a backend technician + their tasks into the directory row / profile shape
+function toTechRow(tech, tasks) {
+  const techTasks = tasks.filter(
+    (t) => t.assignedTo && t.assignedTo._id === tech._id
+  );
+  const completed = techTasks.filter((t) => t.status === 'completed');
+  const active = techTasks.find((t) => t.status !== 'completed');
+
+  // Average completion time from acknowledgedAt -> completedAt
+  const timed = completed.filter((t) => t.acknowledgedAt && t.completedAt);
+  let avgCompletionTime = '—';
+  if (timed.length > 0) {
+    const avgMs =
+      timed.reduce(
+        (sum, t) => sum + (new Date(t.completedAt) - new Date(t.acknowledgedAt)),
+        0
+      ) / timed.length;
+    avgCompletionTime = `${(avgMs / 3600000).toFixed(1)} hrs`;
   }
-];
+
+  return {
+    id: tech._id,
+    name: fullName(tech),
+    email: tech.email,
+    phone: tech.phoneNumber || '—',
+    status: tech.isOnline ? 'Active' : 'Inactive',
+    assignment: active ? active.title : 'No Active Task',
+    assignmentStatus: active ? statusLabel(active.status) : '',
+    avatar: tech.profilePicture || null,
+    gender: '—',
+    dob: formatDob(tech.birthDate),
+    nationality: '—',
+    address: '—',
+    city: '—',
+    state: '—',
+    country: '—',
+    totalOperations: techTasks.length,
+    completedOperations: completed.length,
+    pendingOperations: techTasks.length - completed.length,
+    avgCompletionTime,
+  };
+}
 
 export default function Technicians() {
-  const [technicians, setTechnicians] = useState(INITIAL_TECHNICIANS);
+  const [technicians, setTechnicians] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCriteria, setFilterCriteria] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -124,6 +70,29 @@ export default function Technicians() {
 
   const ITEMS_PER_PAGE = 5;
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [techs, tasks] = await Promise.all([
+          usersApi.getTechnicians(),
+          tasksApi.list().catch(() => []),
+        ]);
+        if (!cancelled) {
+          setTechnicians(techs.map((t) => toTechRow(t, tasks)));
+        }
+      } catch (err) {
+        console.error('Failed to load technicians:', err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -168,8 +137,17 @@ export default function Technicians() {
   const inActiveCount = useMemo(() => technicians.filter(t => t.status === 'Inactive').length, [technicians]);
   const onTaskCount = useMemo(() => technicians.filter(t => t.assignmentStatus !== '').length, [technicians]);
 
-  const handleRemove = (id) => {
-    setTechnicians(prev => prev.filter(tech => tech.id !== id));
+  const handleRemove = async (id) => {
+    if (!window.confirm('Deactivate this technician? This permanently removes their account.')) {
+      setActiveMenuId(null);
+      return;
+    }
+    try {
+      await usersApi.deleteTechnician(id);
+      setTechnicians(prev => prev.filter(tech => tech.id !== id));
+    } catch (err) {
+      alert(`Failed to remove technician: ${err.message}`);
+    }
     setActiveMenuId(null);
   };
 
@@ -341,7 +319,9 @@ export default function Technicians() {
               ))}
               {paginatedTechnicians.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="technicians-empty-state-cell">No matching technicians located.</td>
+                  <td colSpan="5" className="technicians-empty-state-cell">
+                    {loading ? 'Loading technicians…' : 'No matching technicians located.'}
+                  </td>
                 </tr>
               )}
             </tbody>

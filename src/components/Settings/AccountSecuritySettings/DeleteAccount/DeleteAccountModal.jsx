@@ -3,6 +3,8 @@ import './DeleteAccount.css';
 
 export default function DeleteAccountModal({ isOpen, onClose, onDeleteConfirm }) {
   const [confirmationInput, setConfirmationInput] = useState('');
+  const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const REQUIRED_PHRASE = "I understand and I want to delete my account";
 
   if (!isOpen) return null;
@@ -11,10 +13,16 @@ export default function DeleteAccountModal({ isOpen, onClose, onDeleteConfirm })
     setConfirmationInput(e.target.value);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (confirmationInput === REQUIRED_PHRASE) {
-      onDeleteConfirm();
+    if (confirmationInput !== REQUIRED_PHRASE || deleting) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await onDeleteConfirm?.();
+    } catch (err) {
+      setError(err.message || 'Failed to delete account.');
+      setDeleting(false);
     }
   };
 
@@ -53,15 +61,16 @@ export default function DeleteAccountModal({ isOpen, onClose, onDeleteConfirm })
             </div>
 
             <div className="delete-modal-actions">
-              <button type="button" className="btn-cancel-flat" onClick={onClose}>
+              {error && <span style={{ color: '#b3261e', fontSize: '0.85rem', marginRight: 'auto' }}>{error}</span>}
+              <button type="button" className="btn-cancel-flat" onClick={onClose} disabled={deleting}>
                 Cancel
               </button>
               <button
                 type="submit"
                 className="btn-danger-confirm"
-                disabled={confirmationInput !== REQUIRED_PHRASE}
+                disabled={confirmationInput !== REQUIRED_PHRASE || deleting}
               >
-                Permanently Delete Account
+                {deleting ? 'Deleting…' : 'Permanently Delete Account'}
               </button>
             </div>
           </form>

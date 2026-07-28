@@ -1,40 +1,130 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import './Chat.css';
+import { chatsApi, usersApi, fullName } from '../../../api/services';
+import { getStoredUser } from '../../../api/client';
 
-const INITIAL_CHATS = [
-  { id: 1, name: 'Ebenezer Quarcoo', role: 'Cyber Security and Digital Forensics Student || Graphic Designer', lastMsg: 'Ebenezer: Congrats on the new role!', date: 'May 11', unread: true, favourite: false, archived: false },
-  { id: 2, name: 'Fiador Prince', role: 'Solutions Architect', lastMsg: 'Fiador: yes please, All is well', date: 'May 6', unread: true, favourite: false, archived: false },
-  { id: 3, name: 'Stephen Quarcoo', role: 'Software Engineer', lastMsg: "Stephen: You're welcome", date: 'May 6', unread: false, favourite: false, archived: false },
-  { id: 4, name: 'Maneedeep Mangapoti', role: 'DevOps Lead', lastMsg: "Maneedeep: You're welcome", date: 'May 6', unread: false, favourite: false, archived: false }
-];
+const AVATAR_BASE =
+  'https://ui-avatars.com/api/?background=dbeafe&color=1d4ed8&name=';
 
-// Master list of all possible system users to start a new message with
-const ALL_SYSTEM_USERS = [
-  { id: 1, name: 'Ebenezer Quarcoo', role: 'Cyber Security and Digital Forensics Student || Graphic Designer' },
-  { id: 2, name: 'Fiador Prince', role: 'Solutions Architect' },
-  { id: 3, name: 'Stephen Quarcoo', role: 'Software Engineer' },
-  { id: 4, name: 'Maneedeep Mangapoti', role: 'DevOps Lead' },
-  { id: 5, name: 'Samuel Sallo', role: 'Frontend Developer' },
-  { id: 6, name: 'Ama Serwaa', role: 'UI/UX Designer' }
-];
+// Refresh conversations/messages every 10s while the widget is open
+const CHAT_POLL_MS = 10000;
+
+const avatarFor = (user) =>
+  user?.profilePicture || `${AVATAR_BASE}${encodeURIComponent(fullName(user) || 'User')}`;
+
+function formatChatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 export default function Chat() {
+  const currentUser = getStoredUser();
+  const myId = currentUser?._id;
+
   const [isOpen, setIsOpen] = useState(false);
   const [activeChat, setActiveChat] = useState(null);
-  const [chats, setChats] = useState(INITIAL_CHATS);
+  const [chats, setChats] = useState([]);
   const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('name');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [filterType, setFilterType] = useState('name');
+
+  // Local-only chat flags (archive/star are not supported by the backend)
+  const [localFlags, setLocalFlags] = useState({});
 
   // New Message Mode states
   const [isNewMessageMode, setIsNewMessageMode] = useState(false);
   const [newUserSearch, setNewUserSearch] = useState('');
+  const [allUsers, setAllUsers] = useState([]);
 
-  const [messages, setMessages] = useState({});
+  const [messages, setMessages] = useState([]);
   const [typedMessage, setTypedMessage] = useState('');
+  const [sending, setSending] = useState(false);
   const messageAreaRef = useRef(null);
+
+  // Map a backend chat doc into the row shape used by this widget
+  const toChatRow = useCallback(
+    (chat) => {
+      const other =
+        chat.participants.find((p) => p._id !== myId) || chat.participants[0];
+      const flags = localFlags[chat._id] || {};
+      return {
+        id: chat._id,
+        name: fullName(other) || 'Unknown user',
+        otherUser: other,
+        role: '',
+        lastMsg: chat.lastMessage ? chat.lastMessage.content : 'No messages yet',
+        date: formatChatDate(chat.lastMessage?.createdAt || chat.updatedAt),
+        unread: false,
+        favourite: !!flags.favourite,
+        archived: !!flags.archived,
+        deleted: !!flags.deleted,
+      };
+    },
+    [myId, localFlags]
+  );
+
+  // Load conversations (and poll while open)
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const data = await chatsApi.list();
+        if (!cancelled) setChats(data);
+      } catch (err) {
+        console.error('Failed to load chats:', err.message);
+      }
+    };
+
+    load();
+    const timer = setInterval(load, CHAT_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [isOpen]);
+
+  // Load users for the "new message" search (admins chat with technicians)
+  useEffect(() => {
+    if (!isNewMessageMode) return;
+    usersApi
+      .getTechnicians()
+      .then(setAllUsers)
+      .catch(() => setAllUsers([]));
+  }, [isNewMessageMode]);
+
+  // Load messages for the open conversation (and poll)
+  useEffect(() => {
+    if (!activeChat) {
+      setMessages([]);
+      return;
+    }
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const data = await chatsApi.messages(activeChat.id);
+        if (!cancelled) setMessages(data);
+      } catch (err) {
+        console.error('Failed to load messages:', err.message);
+      }
+    };
+
+    load();
+    const timer = setInterval(load, CHAT_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [activeChat]);
 
   useEffect(() => {
     if (messageAreaRef.current) {
@@ -42,8 +132,10 @@ export default function Chat() {
     }
   }, [activeChat, messages]);
 
+  const chatRows = chats.map(toChatRow).filter((c) => !c.deleted);
+
   // Tab Filtering & Main Search Logic
-  const processedChats = chats.filter(chat => {
+  const processedChats = chatRows.filter(chat => {
     const matchesSearch = chat.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     if (activeTab === 'Unread' && !chat.unread) return false;
@@ -53,73 +145,59 @@ export default function Chat() {
     // Explicit Rule: All tab displays everything except archived chats
     if (activeTab === 'All' && chat.archived) return false;
 
-    if (filterType === 'unread' && !chat.unread) return false;
-    if (filterType === 'read' && chat.unread) return false;
-
     return matchesSearch;
   });
 
   // Filter system users for the New Message search engine
-  const filteredNewUsers = ALL_SYSTEM_USERS.filter(user =>
-    user.name.toLowerCase().includes(newUserSearch.toLowerCase())
+  const filteredNewUsers = allUsers.filter(user =>
+    fullName(user).toLowerCase().includes(newUserSearch.toLowerCase())
   );
 
-  // Dynamic context action updates
+  // Archive/star/delete are UI-only conveniences (no backend support yet)
   const handleAction = (id, action) => {
-    setChats(prev => prev.map(chat => {
-      if (chat.id === id) {
-        if (action === 'read') return { ...chat, unread: !chat.unread };
-        if (action === 'archive') return { ...chat, archived: !chat.archived }; // Toggles archive/unarchive status
-        if (action === 'star') return { ...chat, favourite: !chat.favourite };
-      }
-      return chat;
-    }));
-    if (action === 'delete') {
-      setChats(prev => prev.filter(chat => chat.id !== id));
-    }
+    setLocalFlags(prev => {
+      const flags = prev[id] || {};
+      if (action === 'archive') return { ...prev, [id]: { ...flags, archived: !flags.archived } };
+      if (action === 'star') return { ...prev, [id]: { ...flags, favourite: !flags.favourite } };
+      if (action === 'delete') return { ...prev, [id]: { ...flags, deleted: true } };
+      return prev;
+    });
     setActiveMenuId(null);
   };
 
-  const handleSendMessage = () => {
-    if (!typedMessage.trim() || !activeChat) return;
-    const chatId = activeChat.id;
-    const newMsg = { id: Date.now(), text: typedMessage, sender: 'me', time: 'Just now' };
-
-    setMessages(prev => ({
-      ...prev,
-      [chatId]: [...(prev[chatId] || []), newMsg]
-    }));
-
-    setChats(prev => prev.map(c => c.id === chatId ? { ...c, lastMsg: `You: ${typedMessage}`, date: 'Just now' } : c));
-    setTypedMessage('');
-  };
-
-  const handleSelectUserForNewMessage = (user) => {
-    // Check if conversation track already exists
-    let existingChat = chats.find(c => c.name === user.name);
-
-    if (!existingChat) {
-      const newChatObj = {
-        id: chats.length + 1,
-        name: user.name,
-        role: user.role,
-        lastMsg: 'No messages yet',
-        date: 'Now',
-        unread: false,
-        favourite: false,
-        archived: false
-      };
-      setChats(prev => [newChatObj, ...prev]);
-      existingChat = newChatObj;
-    } else if (existingChat.archived) {
-      // If conversation is archived, safely restore it
-      existingChat.archived = false;
+  const handleSendMessage = async () => {
+    if (!typedMessage.trim() || !activeChat || sending) return;
+    const content = typedMessage.trim();
+    setSending(true);
+    try {
+      const sent = await chatsApi.send(activeChat.id, content);
+      setMessages(prev => [...prev, sent]);
+      setTypedMessage('');
+      // Refresh conversation previews
+      chatsApi.list().then(setChats).catch(() => {});
+    } catch (err) {
+      alert(`Failed to send message: ${err.message}`);
+    } finally {
+      setSending(false);
     }
-
-    setActiveChat(existingChat);
-    setIsNewMessageMode(false);
-    setNewUserSearch('');
   };
+
+  const handleSelectUserForNewMessage = async (user) => {
+    try {
+      const chat = await chatsApi.createOrGet(user._id);
+      setChats(prev => {
+        const exists = prev.some(c => c._id === chat._id);
+        return exists ? prev : [chat, ...prev];
+      });
+      setActiveChat(toChatRow(chat));
+      setIsNewMessageMode(false);
+      setNewUserSearch('');
+    } catch (err) {
+      alert(`Failed to start chat: ${err.message}`);
+    }
+  };
+
+  const myAvatar = `${AVATAR_BASE}${encodeURIComponent(fullName(currentUser) || 'Admin')}`;
 
   return (
     <div className={`lk-chat-widget ${isOpen ? 'is-open' : 'is-closed'} ${activeChat ? 'is-viewing-chat' : ''}`}>
@@ -128,7 +206,7 @@ export default function Chat() {
       <div className="lk-chat-header" onClick={() => { if (!activeChat) { setIsOpen(!isOpen); setIsNewMessageMode(false); } }}>
         <div className="lk-header-left">
           <div className="lk-avatar-container">
-            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" alt="Me" className="lk-user-pfp" />
+            <img src={myAvatar} alt="Me" className="lk-user-pfp" />
             <span className="lk-status-dot online"></span>
           </div>
           <span className="lk-header-title">Messaging</span>
@@ -173,15 +251,15 @@ export default function Chat() {
                 {filteredNewUsers.length === 0 ? (
                   <div className="lk-empty-category-state">
                     <i className="fa-solid fa-user-slash"></i>
-                    <p>No connections found matching "{newUserSearch}"</p>
+                    <p>No technicians found matching "{newUserSearch}"</p>
                   </div>
                 ) : (
                   filteredNewUsers.map(user => (
-                    <div key={user.id} className="lk-new-user-row-item" onClick={() => handleSelectUserForNewMessage(user)}>
-                      <img src={`https://i.pravatar.cc/150?img=${user.id + 10}`} alt="" className="lk-new-user-avatar" />
+                    <div key={user._id} className="lk-new-user-row-item" onClick={() => handleSelectUserForNewMessage(user)}>
+                      <img src={avatarFor(user)} alt="" className="lk-new-user-avatar" />
                       <div className="lk-new-user-details">
-                        <h5>{user.name}</h5>
-                        <p>{user.role}</p>
+                        <h5>{fullName(user)}</h5>
+                        <p>{user.isOnline ? 'Online' : 'Offline'} · Technician</p>
                       </div>
                     </div>
                   ))
@@ -208,8 +286,6 @@ export default function Chat() {
                   {showFilterDropdown && (
                     <div className="lk-filter-menu">
                       <div className={`lk-filter-item ${filterType === 'name' ? 'active' : ''}`} onClick={() => { setFilterType('name'); setShowFilterDropdown(false); }}>Filter by Name</div>
-                      <div className={`lk-filter-item ${filterType === 'unread' ? 'active' : ''}`} onClick={() => { setFilterType('unread'); setShowFilterDropdown(false); }}>Unread</div>
-                      <div className={`lk-filter-item ${filterType === 'read' ? 'active' : ''}`} onClick={() => { setFilterType('read'); setShowFilterDropdown(false); }}>Read</div>
                     </div>
                   )}
                 </div>
@@ -217,7 +293,7 @@ export default function Chat() {
 
               {/* Navigation Tab Elements */}
               <div className="lk-tabs-bar">
-                {['All', 'Unread', 'Archived', 'Favourite'].map(tab => (
+                {['All', 'Archived', 'Favourite'].map(tab => (
                   <button
                     key={tab}
                     className={`lk-tab-btn ${activeTab === tab ? 'active-tab' : ''}`}
@@ -241,7 +317,7 @@ export default function Chat() {
                   processedChats.map(chat => (
                     <div key={chat.id} className={`lk-chat-item ${chat.unread ? 'unread-style' : ''}`} onClick={() => setActiveChat(chat)}>
                       <div className="lk-item-avatar-wrapper">
-                        <img src={`https://i.pravatar.cc/150?img=${chat.id + 10}`} alt={chat.name} className="lk-item-pfp" />
+                        <img src={avatarFor(chat.otherUser)} alt={chat.name} className="lk-item-pfp" />
                         <span className="lk-status-dot online-hollow"></span>
                       </div>
 
@@ -257,8 +333,6 @@ export default function Chat() {
 
                             {activeMenuId === chat.id && (
                               <div className="lk-action-popup-menu">
-                                <div onClick={() => handleAction(chat.id, 'read')}><i className="fa-regular fa-envelope"></i> Mark as {chat.unread ? 'Read' : 'Unread'}</div>
-
                                 {/* Dynamic toggle label changes back and forth between Archive and Unarchive */}
                                 <div onClick={() => handleAction(chat.id, 'archive')}>
                                   <i className="fa-regular fa-folder-open"></i>
@@ -266,14 +340,13 @@ export default function Chat() {
                                 </div>
 
                                 <div onClick={() => handleAction(chat.id, 'star')}><i className="fa-regular fa-star"></i> {chat.favourite ? 'Unstar' : 'Star Favourite'}</div>
-                                <div onClick={() => handleAction(chat.id, 'delete')} className="danger-action"><i className="fa-regular fa-trash-can"></i> Delete Conversation</div>
+                                <div onClick={() => handleAction(chat.id, 'delete')} className="danger-action"><i className="fa-regular fa-trash-can"></i> Hide Conversation</div>
                               </div>
                             )}
                           </div>
                         </div>
                         <p className="lk-item-msg-preview">{chat.lastMsg}</p>
                       </div>
-                      {chat.unread && <span className="lk-unread-pill-indicator">1</span>}
                     </div>
                   ))
                 )}
@@ -288,41 +361,44 @@ export default function Chat() {
                   <i className="fa-solid fa-arrow-left lk-back-arrow"></i>
                   <div>
                     <h4 className="lk-detail-name">{activeChat.name}</h4>
-                    <span className="lk-detail-status">Mobile • 1d ago</span>
+                    <span className="lk-detail-status">
+                      {activeChat.otherUser?.isOnline ? 'Online' : 'Offline'}
+                    </span>
                   </div>
                 </div>
                 <div className="lk-detail-header-right">
                   <button className="lk-icon-btn"><i className="fa-solid fa-ellipsis"></i></button>
-                  <button className="lk-icon-btn"><i className="fa-solid fa-arrows-up-down-left-right"></i></button>
                   <button className="lk-icon-btn" onClick={() => setActiveChat(null)}><i className="fa-solid fa-xmark"></i></button>
                 </div>
               </div>
 
               <div className="lk-messages-timeline" ref={messageAreaRef}>
                 <div className="lk-user-intro-card">
-                  <img src={`https://i.pravatar.cc/150?img=${activeChat.id + 10}`} alt={activeChat.name} className="lk-intro-avatar" />
-                  <h3>{activeChat.name} <span className="lk-badge-dist">· 1st</span></h3>
-                  <p>{activeChat.role}</p>
+                  <img src={avatarFor(activeChat.otherUser)} alt={activeChat.name} className="lk-intro-avatar" />
+                  <h3>{activeChat.name}</h3>
+                  <p>Technician</p>
                 </div>
 
-                <div className="lk-timeline-divider"><span>MAY 11</span></div>
-
-                <div className="lk-msg-bubble-group">
-                  <img src={`https://i.pravatar.cc/150?img=${activeChat.id + 10}`} alt="" className="lk-msg-bubble-pfp" />
-                  <div className="lk-msg-bubble-contents">
-                    <h5>{activeChat.name} <span>• 8:37 PM</span></h5>
-                    <p>Congrats on the new role!</p>
-                  </div>
-                </div>
-
-                {(messages[activeChat.id] || []).map(msg => (
-                  <div key={msg.id} className={`lk-msg-bubble-group ${msg.sender === 'me' ? 'outgoing' : ''}`}>
-                    <div className="lk-msg-bubble-contents">
-                      <h5>{msg.sender === 'me' ? 'You' : activeChat.name} <span>• {msg.time}</span></h5>
-                      <p>{msg.text}</p>
+                {messages.map(msg => {
+                  const isMine = msg.sender?._id === myId;
+                  return (
+                    <div key={msg._id} className={`lk-msg-bubble-group ${isMine ? 'outgoing' : ''}`}>
+                      {!isMine && (
+                        <img src={avatarFor(msg.sender)} alt="" className="lk-msg-bubble-pfp" />
+                      )}
+                      <div className="lk-msg-bubble-contents">
+                        <h5>
+                          {isMine ? 'You' : fullName(msg.sender)}{' '}
+                          <span>• {formatChatDate(msg.createdAt)}</span>
+                        </h5>
+                        <p>{msg.content}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+                {messages.length === 0 && (
+                  <div className="lk-timeline-divider"><span>No messages yet — say hello!</span></div>
+                )}
               </div>
 
               <div className="lk-chat-input-composer">
@@ -336,22 +412,12 @@ export default function Chat() {
                   <i className="fa-solid fa-chevron-up lk-expand-input-icon"></i>
                 </div>
 
-                {/* Toolbar Context (Gif and Emojis removed completely) */}
+                {/* Toolbar Context */}
                 <div className="lk-composer-toolbar">
-                  <div className="lk-toolbar-left-actions">
-                    <button className="lk-toolbar-btn" onClick={() => document.getElementById('img-inp').click()} title="Send Image">
-                      <i className="fa-regular fa-image"></i>
-                    </button>
-                    <button className="lk-toolbar-btn" onClick={() => document.getElementById('doc-inp').click()} title="Attach Document">
-                      <i className="fa-solid fa-paperclip"></i>
-                    </button>
-
-                    <input type="file" id="img-inp" accept="image/*" style={{ display: 'none' }} onChange={(e) => setTypedMessage(p => p + ` [Image: ${e.target.files[0].name}] `)} />
-                    <input type="file" id="doc-inp" accept=".pdf,.doc,.docx" style={{ display: 'none' }} onChange={(e) => setTypedMessage(p => p + ` [Document: ${e.target.files[0].name}] `)} />
-                  </div>
+                  <div className="lk-toolbar-left-actions"></div>
 
                   <div className="lk-toolbar-right-actions">
-                    <span className="lk-submit-tip-label">Press Enter to Send</span>
+                    <span className="lk-submit-tip-label">{sending ? 'Sending…' : 'Press Enter to Send'}</span>
                     <button className="lk-icon-btn"><i className="fa-solid fa-ellipsis"></i></button>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import './TaskModal.css';
 import taskGraphic from '../../../assets/taskImg.jpg';
+import { tasksApi, customersApi, usersApi, fullName } from '../../../api/services';
 
 export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
   const [taskName, setTaskName] = useState('');
@@ -10,47 +11,42 @@ export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
   const [callerPhone, setCallerPhone] = useState('');
   const [priority, setPriority] = useState('Medium');
   const [technician, setTechnician] = useState('');
+  const [technicianId, setTechnicianId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const [showCompanyTips, setShowCompanyTips] = useState(false);
   const [showLocationTips, setShowLocationTips] = useState(false);
   const [showTechTips, setShowTechTips] = useState(false);
 
+  const [customers, setCustomers] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
+
   const companyRef = useRef(null);
   const locationRef = useRef(null);
   const techRef = useRef(null);
 
-  const customerDatabase = [
-    'GCB Bank PLC', 'Ecobank Ghana', 'Absa Bank Ghana',
-    'Stanbic Bank Ghana', 'Fidelity Bank Ghana',
-    'Standard Chartered', 'Zenith Bank Ghana',
-    'CalBank PLC', 'Consolidated Bank Ghana'
-  ];
+  // Load real customers and technicians for the autocomplete fields
+  useEffect(() => {
+    if (!isOpen) return;
+    customersApi.list().then(setCustomers).catch(() => setCustomers([]));
+    usersApi.getTechnicians().then(setTechnicians).catch(() => setTechnicians([]));
+  }, [isOpen]);
 
-  const locationDatabase = [
-    'Airport Residential Area, Accra', 'Osu, Accra', 'East Legon, Accra',
-    'Ridge, Accra', 'Adabraka, Accra', 'Danes Bar, Kumasi', 'Kwadaso, Kumasi'
-  ];
+  const customerNames = customers.map((c) => c.name);
+  const locationNames = [...new Set(customers.map((c) => c.location).filter(Boolean))];
 
-  const technicianDatabase = [
-    { name: 'Kwame Mensah', region: 'Accra' },
-    { name: 'Emmanuel Osei', region: 'Accra' },
-    { name: 'John Mahama', region: 'Accra' },
-    { name: 'Kofi Asante', region: 'Kumasi' },
-    { name: 'Baba Moro', region: 'Kumasi' }
-  ];
-
-  const filteredCompanies = customerDatabase.filter(c =>
+  const filteredCompanies = customerNames.filter(c =>
     c.toLowerCase().includes(companySearch.toLowerCase())
   );
 
-  const filteredLocations = locationDatabase.filter(l =>
+  const filteredLocations = locationNames.filter(l =>
     l.toLowerCase().includes(locationSearch.toLowerCase())
   );
 
-  const suggestedTechnicians = technicianDatabase.filter(tech => {
-    if (!locationSearch) return true;
-    return locationSearch.toLowerCase().includes(tech.region.toLowerCase());
-  }).filter(t => t.name.toLowerCase().includes(technician.toLowerCase()));
+  const suggestedTechnicians = technicians
+    .map((t) => ({ id: t._id, name: fullName(t), isOnline: t.isOnline }))
+    .filter((t) => t.name.toLowerCase().includes(technician.toLowerCase()));
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -64,24 +60,46 @@ export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!taskName.trim()) return;
+    if (!taskName.trim() || submitting) return;
 
-    const taskPayload = {
-      taskName,
-      description,
-      companyName: companySearch,
-      location: locationSearch,
-      callerPhone,
-      priority,
-      technician
-    };
+    setSubmitting(true);
+    setSubmitError('');
 
-    alert(`Success: Field operation "${taskName}" has been successfully created and dispatched!`);
+    // Resolve the typed technician name to an id if it wasn't picked from the list
+    let assignedTo = technicianId;
+    if (!assignedTo && technician.trim()) {
+      const match = suggestedTechnicians.find(
+        (t) => t.name.toLowerCase() === technician.trim().toLowerCase()
+      );
+      assignedTo = match?.id || null;
+    }
 
-    if (onCreateTask) onCreateTask(taskPayload);
-    onClose();
+    try {
+      const created = await tasksApi.create({
+        title: taskName,
+        description,
+        assignedTo: assignedTo || undefined,
+        location: locationSearch ? { address: locationSearch } : undefined,
+        priority: priority.toLowerCase(),
+        companyName: companySearch,
+        callerPhone,
+      });
+
+      if (onCreateTask) onCreateTask(created);
+
+      // Reset form for next use
+      setTaskName(''); setDescription(''); setCompanySearch('');
+      setLocationSearch(''); setCallerPhone(''); setPriority('Medium');
+      setTechnician(''); setTechnicianId(null);
+
+      onClose();
+    } catch (err) {
+      setSubmitError(err.message || 'Failed to create task');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -192,22 +210,22 @@ export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
                 <input
                   id="technician"
                   type="text"
-                  placeholder={locationSearch ? "Showing nearby field agents..." : "Assign a field technician..."}
+                  placeholder="Assign a field technician..."
                   value={technician}
-                  onChange={(e) => { setTechnician(e.target.value); setShowTechTips(true); }}
+                  onChange={(e) => { setTechnician(e.target.value); setTechnicianId(null); setShowTechTips(true); }}
                   onFocus={() => setShowTechTips(true)}
                   className="form-standard-text-input"
                 />
                 {showTechTips && (
                   <ul className="autocomplete-suggestions-dropdown-list">
                     {suggestedTechnicians.length > 0 ? (
-                      suggestedTechnicians.map((t, i) => (
-                        <li key={i} onClick={() => { setTechnician(t.name); setShowTechTips(false); }}>
-                          {t.name} <span className="tech-region-tag">({t.region})</span>
+                      suggestedTechnicians.map((t) => (
+                        <li key={t.id} onClick={() => { setTechnician(t.name); setTechnicianId(t.id); setShowTechTips(false); }}>
+                          {t.name} <span className="tech-region-tag">({t.isOnline ? 'Online' : 'Offline'})</span>
                         </li>
                       ))
                     ) : (
-                      <li className="no-suggestions-indicator-item">No matching regional agents found</li>
+                      <li className="no-suggestions-indicator-item">No matching technicians found</li>
                     )}
                   </ul>
                 )}
@@ -227,8 +245,15 @@ export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
             </div>
 
             <footer className="modal-panel-footer-row">
-              <button type="button" className="wizard-back-navigation-btn" onClick={onClose}>Back</button>
-              <button type="submit" className="wizard-create-task-submit-btn">CREATE OPERATION</button>
+              {submitError && (
+                <span style={{ color: '#b3261e', fontSize: '0.85rem', marginRight: 'auto' }}>
+                  {submitError}
+                </span>
+              )}
+              <button type="button" className="wizard-back-navigation-btn" onClick={onClose} disabled={submitting}>Back</button>
+              <button type="submit" className="wizard-create-task-submit-btn" disabled={submitting}>
+                {submitting ? 'CREATING…' : 'CREATE OPERATION'}
+              </button>
             </footer>
 
           </form>

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
 import './Security.css';
 import ChangePasswordModal from './ChangePassword/ChangePasswordModal';
 import DeleteAccountModal from './DeleteAccount/DeleteAccountModal';
+import { clearSession } from '../../../api/client';
+import { usersApi } from '../../../api/services';
 
 export default function AccountSecurity() {
   const [isPassordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -11,8 +13,14 @@ export default function AccountSecurity() {
   const navigate = useNavigate(); // 2. Initialize the navigation hook
 
   const handleSignOut = () => {
-    // Add any sign-out cleanup logic here (e.g., localStorage.clear())
+    clearSession();
     navigate('/'); // 3. Navigate home
+  };
+
+  const handleDeleteAccount = async () => {
+    await usersApi.deleteAccount();
+    clearSession();
+    navigate('/');
   };
 
   return (
@@ -97,6 +105,7 @@ export default function AccountSecurity() {
       <DeleteAccountModal
         isOpen={isDeleteAccountModalOpen}
         onClose={() => setIsDeleteAccountModalOpen(false)}
+        onDeleteConfirm={handleDeleteAccount}
       />
     </div>
   );

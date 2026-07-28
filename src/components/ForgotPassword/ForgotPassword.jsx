@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authApi } from '../../api/services';
 import './ForgotPassword.css';
 
 // 1. Replace these placeholder paths with your actual asset file locations
@@ -26,10 +27,21 @@ export default function ForgotPasswordFlow() {
     }, 1200);
   };
 
-  const handleEmailSubmit = (e) => {
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
     if (!email) return;
-    simulateApiCall(() => setStep(2));
+    setLoading(true);
+    try {
+      // Backend sends reset instructions if the email exists.
+      // NOTE: the rest of this flow (OTP + new password) is not yet
+      // supported by the backend, so the later steps remain client-side.
+      await authApi.forgotPassword(email);
+    } catch {
+      // Response is intentionally the same whether the email exists or not.
+    } finally {
+      setLoading(false);
+      setStep(2);
+    }
   };
 
   const handleOtpChange = (element, index) => {

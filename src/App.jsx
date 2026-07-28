@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Login/Login';
 import AdminLayout from './Layout/AdminLayout'; // Import the layout wrapper
 import ForgotPassword from './components/ForgotPassword/ForgotPassword';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -13,7 +14,9 @@ function App() {
         <Route
           path="/admin"
           element={
-            <AdminLayout />
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
           }
         />
 

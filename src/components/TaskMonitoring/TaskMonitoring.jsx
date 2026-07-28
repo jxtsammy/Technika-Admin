@@ -1,27 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './TaskMonitoring.css';
 import AddTaskModal from './AddTask/AddTaskModal';
+import { tasksApi, fullName, statusLabel, capitalize } from '../../api/services';
+
+const DEFAULT_AVATAR =
+  'https://ui-avatars.com/api/?background=e2e8f0&color=475569&name=';
 
 export default function TechnikaTasks() {
   const [filterCriteria, setFilterCriteria] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tasks, setTasks] = useState([]);
+  const [stats, setStats] = useState({ available: 0, pending: 0, completed: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadData = useCallback(async () => {
+    try {
+      const [taskList, taskStats] = await Promise.all([
+        tasksApi.list(),
+        tasksApi.stats(),
+      ]);
+      setTasks(
+        taskList.map((t) => ({
+          id: t._id,
+          name: t.title,
+          location: t.location?.address || t.companyName || '—',
+          technician: t.assignedTo ? fullName(t.assignedTo) : 'Unassigned',
+          avatar: `${DEFAULT_AVATAR}${encodeURIComponent(
+            t.assignedTo ? fullName(t.assignedTo) : 'N A'
+          )}`,
+          priority: capitalize(t.priority),
+          status: statusLabel(t.status),
+        }))
+      );
+      setStats(taskStats);
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleCreateTask = () => {
+    // Modal already POSTed the task; just refresh the table + stats
+    loadData();
+  };
+
+  const totalTasks = stats.available + stats.pending + stats.completed;
 
   const taskStats = [
-    { label: 'Total Tasks', value: 12, sub: 'Tasks created this month', change: '+18%', isPositive: true, icon: 'fa-clipboard-list' },
-    { label: 'In Progress', value: 4, sub: 'Currently being worked on', change: '-12%', isPositive: false, icon: 'fa-spinner' },
-    { label: 'Completed', value: 8, sub: 'Tasks finished this week', change: '+24%', isPositive: true, icon: 'fa-circle-check' },
-    { label: 'Pending', value: 2, sub: 'Awaiting technician assignment', change: '+5%', isPositive: false, icon: 'fa-clock' }
-  ];
-
-  const initialTasks = [
-    { id: 1, name: 'ATM Screen Repair', location: 'GCB Bank - High Street', technician: 'Kwame Mensah', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop', priority: 'High', status: 'Pending' },
-    { id: 2, name: 'Server Room AC Maintenance', location: 'Ecobank - Silver Star Tower', technician: 'Ama Osei', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop', priority: 'Medium', status: 'In Progress' },
-    { id: 3, name: 'Vault Security Calibration', location: 'Absa Bank - Accra Financial Centre', technician: 'Kofi Atta', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop', priority: 'High', status: 'Completed' },
-    { id: 4, name: 'Queue Manager Network Patch', location: 'Stanbic Bank - Kwame Nkrumah Avenue', technician: 'Esi Ansah', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop', priority: 'Low', status: 'In Progress' },
-    { id: 5, name: 'CCTV Camera Replacement', location: 'Fidelity Bank - Ridge Head Office', technician: 'Yaw Boakye', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop', priority: 'Medium', status: 'Pending' },
-    { id: 6, name: 'UPS Battery Bank Auditing', location: 'CalBank - Independence Avenue', technician: 'Afia Kwarteng', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop', priority: 'Low', status: 'Completed' },
-    { id: 7, name: 'Biometric Access Configuration', location: 'Zenith Bank - Outer Ring Road', technician: 'Kweku Appiah', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=100&h=100&fit=crop', priority: 'High', status: 'In Progress' }
+    { label: 'Total Tasks', value: totalTasks, sub: 'All operations', icon: 'fa-clipboard-list' },
+    { label: 'In Progress', value: stats.pending, sub: 'Currently being worked on', icon: 'fa-spinner' },
+    { label: 'Completed', value: stats.completed, sub: 'Tasks finished', icon: 'fa-circle-check' },
+    { label: 'Pending', value: stats.available, sub: 'Awaiting technician start', icon: 'fa-clock' }
   ];
 
   const getPriorityClass = (p) => {
@@ -36,7 +73,7 @@ export default function TechnikaTasks() {
     return 'stat-pending';
   };
 
-  const filteredTasks = initialTasks.filter(task => {
+  const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.name.toLowerCase().includes(searchQuery.toLowerCase());
     if (filterCriteria === 'all') return matchesSearch;
     if (filterCriteria === 'High' || filterCriteria === 'Medium' || filterCriteria === 'Low') {
@@ -99,9 +136,6 @@ export default function TechnikaTasks() {
 
             <div className="card-central-numerical-row">
               <h3 className="card-main-metric-value">{stat.value}</h3>
-              <span className={`card-percentage-badge badge-white-trans`}>
-                {stat.change}
-              </span>
             </div>
             <p className="card-lower-descriptor-text">{stat.sub}</p>
           </div>
@@ -144,7 +178,13 @@ export default function TechnikaTasks() {
             ))}
             {filteredTasks.length === 0 && (
               <tr>
-                <td colSpan="5" className="table-empty-fallback">No tasks match the active filters.</td>
+                <td colSpan="5" className="table-empty-fallback">
+                  {loading
+                    ? 'Loading tasks…'
+                    : error
+                      ? `Could not load tasks: ${error}`
+                      : 'No tasks match the active filters.'}
+                </td>
               </tr>
             )}
           </tbody>
@@ -164,7 +204,7 @@ export default function TechnikaTasks() {
         </footer>
       </main>
 
-      <AddTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <AddTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onCreateTask={handleCreateTask} />
     </div>
   );
 }
