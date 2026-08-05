@@ -60,7 +60,7 @@
   justify-content: center;
   padding: 2rem;
   box-sizing: border-box;
-  background: linear-gradient(135deg, #05070c 0%, #070a12 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
 }
 
 @media (min-width: 768px) {
@@ -76,20 +76,21 @@
 }
 
 .form-header h2 {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
   margin: 0;
+  color: #0f0f0f;
 }
 
 .form-header p {
   font-size: 0.85rem;
-  color: #94a3b8;
-  margin: 0.5rem 0 0 0;
+  color: #0f0f0f;
+  margin: 0.2rem 0 0 0;
 }
 
 /* Form Elements */
 .login-form {
-  margin-top: 2.5rem;
+  margin-top: 2.0rem;
 }
 
 .form-group {
@@ -107,7 +108,7 @@
   display: block;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #94a3b8;
+  color: #000000;
   margin-bottom: 0.5rem;
 }
 
@@ -116,7 +117,7 @@
 .form-group input[type="email"],
 .form-group input[type="password"] {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.0rem;
   background-color: #f1f5f9;
   color: #0f172a;
   border: none;
