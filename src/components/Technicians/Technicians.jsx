@@ -2,7 +2,13 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import "./Technicians.css";
 import Profile from "../../assets/profile.png";
 import TechnicianDetailsModal from "./TechnicianDetails/TechnicianProfileModal";
-import { usersApi, tasksApi, fullName, statusLabel } from "../../api/services";
+import {
+    usersApi,
+    tasksApi,
+    technicianApi,
+    fullName,
+    statusLabel,
+} from "../../api/services";
 
 function formatDob(iso) {
     if (!iso) return "—";
@@ -13,8 +19,17 @@ function formatDob(iso) {
     });
 }
 
-// Map a backend technician + their tasks into the directory row / profile shape
-function toTechRow(tech, tasks) {
+// Trust score color banding — used for both the list badge and the modal
+export function trustScoreColor(score) {
+    if (score == null) return { bg: "#F2F4F7", text: "#667085" }; // gray — no data
+    if (score >= 80) return { bg: "#DCFCE7", text: "#15803D" }; // green
+    if (score >= 50) return { bg: "#FEF3C7", text: "#B45309" }; // amber
+    return { bg: "#FEE4E2", text: "#B42318" }; // red
+}
+
+// Map a backend technician + their tasks + trust score result into the
+// directory row / profile shape
+function toTechRow(tech, tasks, trustResult) {
     const techTasks = tasks.filter(
         (t) => t.assignedTo && t.assignedTo._id === tech._id,
     );
@@ -58,6 +73,12 @@ function toTechRow(tech, tasks) {
         completedOperations: completed.length,
         pendingOperations: techTasks.length - completed.length,
         avgCompletionTime,
+        // Trust & Reliability Score — null score/breakdown means the
+        // technician has no completed tasks yet or the fetch failed;
+        // handled distinctly (gray "No data" badge) rather than shown as 0.
+        trustScore: trustResult?.score ?? null,
+        trustBreakdown: trustResult?.breakdown ?? null,
+        trustSampleSize: trustResult?.sampleSize ?? 0,
     };
 }
 
@@ -84,8 +105,23 @@ export default function Technicians() {
                     usersApi.getTechnicians(),
                     tasksApi.list().catch(() => []),
                 ]);
+
+                // Trust score is per-technician (no bulk endpoint), so fetch
+                // them all in parallel. A failed/missing score for one
+                // technician shouldn't block the rest of the list from
+                // loading — fall back to null (shown as "No data").
+                const trustResults = await Promise.all(
+                    techs.map((t) =>
+                        technicianApi.getTrustScore(t._id).catch(() => null),
+                    ),
+                );
+
                 if (!cancelled) {
-                    setTechnicians(techs.map((t) => toTechRow(t, tasks)));
+                    setTechnicians(
+                        techs.map((t, i) =>
+                            toTechRow(t, tasks, trustResults[i]),
+                        ),
+                    );
                 }
             } catch (err) {
                 console.error("Failed to load technicians:", err.message);
@@ -325,6 +361,7 @@ export default function Technicians() {
                                 <th>TECHNICIAN</th>
                                 <th>CONTACT DETAILS</th>
                                 <th>STATUS</th>
+                                <th>TRUST SCORE</th>
                                 <th>CURRENT ASSIGNMENT</th>
                                 <th className="technicians-text-right">
                                     ACTIONS
@@ -332,137 +369,169 @@ export default function Technicians() {
                             </tr>
                         </thead>
                         <tbody>
-                            {paginatedTechnicians.map((tech) => (
-                                <tr key={tech.id}>
-                                    <td>
-                                        <div className="technicians-tech-profile-cell">
-                                            <div className="technicians-profile-image-circle">
-                                                <img
-                                                    src={tech.avatar || Profile}
-                                                    alt={tech.name}
-                                                    className="technicians-avatar-img"
-                                                />
+                            {paginatedTechnicians.map((tech) => {
+                                const trustColor = trustScoreColor(
+                                    tech.trustScore,
+                                );
+                                return (
+                                    <tr key={tech.id}>
+                                        <td>
+                                            <div className="technicians-tech-profile-cell">
+                                                <div className="technicians-profile-image-circle">
+                                                    <img
+                                                        src={
+                                                            tech.avatar ||
+                                                            Profile
+                                                        }
+                                                        alt={tech.name}
+                                                        className="technicians-avatar-img"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <p className="technicians-tech-name">
+                                                        {tech.name}
+                                                        {!tech.accountActive && (
+                                                            <span
+                                                                style={{
+                                                                    marginLeft: 8,
+                                                                    fontSize: 11,
+                                                                    fontWeight: 600,
+                                                                    color: "#B42318",
+                                                                    background:
+                                                                        "#FEE4E2",
+                                                                    borderRadius: 6,
+                                                                    padding:
+                                                                        "2px 8px",
+                                                                }}
+                                                            >
+                                                                Deactivated
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                    <p className="technicians-tech-id">
+                                                        ID: {tech.id}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="technicians-tech-name">
-                                                    {tech.name}
-                                                    {!tech.accountActive && (
-                                                        <span
-                                                            style={{
-                                                                marginLeft: 8,
-                                                                fontSize: 11,
-                                                                fontWeight: 600,
-                                                                color: "#B42318",
-                                                                background:
-                                                                    "#FEE4E2",
-                                                                borderRadius: 6,
-                                                                padding:
-                                                                    "2px 8px",
-                                                            }}
-                                                        >
-                                                            Deactivated
-                                                        </span>
+                                        </td>
+                                        <td>
+                                            <div className="technicians-contact-details-cell">
+                                                <p>
+                                                    <i className="far fa-envelope"></i>{" "}
+                                                    {tech.email}
+                                                </p>
+                                                <p>
+                                                    <i className="fas fa-phone-alt"></i>{" "}
+                                                    {tech.phone}
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span
+                                                className={`technicians-status-tag-badge technicians-status-${tech.status.toLowerCase()}`}
+                                            >
+                                                {tech.status}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span
+                                                title={
+                                                    tech.trustScore == null
+                                                        ? "No completed tasks yet"
+                                                        : `Based on last ${tech.trustSampleSize} completed task(s)`
+                                                }
+                                                style={{
+                                                    display: "inline-block",
+                                                    fontSize: 12,
+                                                    fontWeight: 700,
+                                                    color: trustColor.text,
+                                                    background: trustColor.bg,
+                                                    borderRadius: 6,
+                                                    padding: "3px 10px",
+                                                }}
+                                            >
+                                                {tech.trustScore == null
+                                                    ? "No data"
+                                                    : `${tech.trustScore}`}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="technicians-assignment-cell">
+                                                <p className="technicians-assignment-title">
+                                                    {tech.assignment}{" "}
+                                                    {tech.assignmentStatus && (
+                                                        <i className="fas fa-external-link-alt technicians-external-link"></i>
                                                     )}
                                                 </p>
-                                                <p className="technicians-tech-id">
-                                                    ID: {tech.id}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="technicians-contact-details-cell">
-                                            <p>
-                                                <i className="far fa-envelope"></i>{" "}
-                                                {tech.email}
-                                            </p>
-                                            <p>
-                                                <i className="fas fa-phone-alt"></i>{" "}
-                                                {tech.phone}
-                                            </p>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span
-                                            className={`technicians-status-tag-badge technicians-status-${tech.status.toLowerCase()}`}
-                                        >
-                                            {tech.status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="technicians-assignment-cell">
-                                            <p className="technicians-assignment-title">
-                                                {tech.assignment}{" "}
                                                 {tech.assignmentStatus && (
-                                                    <i className="fas fa-external-link-alt technicians-external-link"></i>
+                                                    <p className="technicians-assignment-status-desc">
+                                                        <span
+                                                            className={`technicians-indicator-dot technicians-indicator-${tech.assignmentStatus.toLowerCase().replace(" ", "-")}`}
+                                                        ></span>
+                                                        {tech.assignmentStatus}
+                                                    </p>
                                                 )}
-                                            </p>
-                                            {tech.assignmentStatus && (
-                                                <p className="technicians-assignment-status-desc">
-                                                    <span
-                                                        className={`technicians-indicator-dot technicians-indicator-${tech.assignmentStatus.toLowerCase().replace(" ", "-")}`}
-                                                    ></span>
-                                                    {tech.assignmentStatus}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="technicians-text-right technicians-position-relative">
-                                        <button
-                                            className="technicians-btn-actions-trigger"
-                                            onClick={() =>
-                                                setActiveMenuId(
-                                                    activeMenuId === tech.id
-                                                        ? null
-                                                        : tech.id,
-                                                )
-                                            }
-                                        >
-                                            <i className="fas fa-ellipsis-v"></i>
-                                        </button>
-
-                                        {activeMenuId === tech.id && (
-                                            <div
-                                                className="technicians-actions-fade-menu"
-                                                ref={menuRef}
-                                            >
-                                                <button
-                                                    className="technicians-menu-action-item"
-                                                    onClick={() =>
-                                                        handleOpenDetailsModal(
-                                                            tech,
-                                                        )
-                                                    }
-                                                >
-                                                    <i className="far fa-eye"></i>{" "}
-                                                    View Details
-                                                </button>
-                                                <button
-                                                    className="technicians-menu-action-item technicians-remove"
-                                                    onClick={() =>
-                                                        handleToggleActive(tech)
-                                                    }
-                                                >
-                                                    <i
-                                                        className={
-                                                            tech.accountActive
-                                                                ? "fas fa-user-slash"
-                                                                : "fas fa-user-check"
-                                                        }
-                                                    ></i>{" "}
-                                                    {tech.accountActive
-                                                        ? "Deactivate"
-                                                        : "Reactivate"}
-                                                </button>
                                             </div>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                        <td className="technicians-text-right technicians-position-relative">
+                                            <button
+                                                className="technicians-btn-actions-trigger"
+                                                onClick={() =>
+                                                    setActiveMenuId(
+                                                        activeMenuId === tech.id
+                                                            ? null
+                                                            : tech.id,
+                                                    )
+                                                }
+                                            >
+                                                <i className="fas fa-ellipsis-v"></i>
+                                            </button>
+
+                                            {activeMenuId === tech.id && (
+                                                <div
+                                                    className="technicians-actions-fade-menu"
+                                                    ref={menuRef}
+                                                >
+                                                    <button
+                                                        className="technicians-menu-action-item"
+                                                        onClick={() =>
+                                                            handleOpenDetailsModal(
+                                                                tech,
+                                                            )
+                                                        }
+                                                    >
+                                                        <i className="far fa-eye"></i>{" "}
+                                                        View Details
+                                                    </button>
+                                                    <button
+                                                        className="technicians-menu-action-item technicians-remove"
+                                                        onClick={() =>
+                                                            handleToggleActive(
+                                                                tech,
+                                                            )
+                                                        }
+                                                    >
+                                                        <i
+                                                            className={
+                                                                tech.accountActive
+                                                                    ? "fas fa-user-slash"
+                                                                    : "fas fa-user-check"
+                                                            }
+                                                        ></i>{" "}
+                                                        {tech.accountActive
+                                                            ? "Deactivate"
+                                                            : "Reactivate"}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                             {paginatedTechnicians.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan="5"
+                                        colSpan="6"
                                         className="technicians-empty-state-cell"
                                     >
                                         {loading
