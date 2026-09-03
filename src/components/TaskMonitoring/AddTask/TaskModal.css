@@ -7,8 +7,8 @@
   right: 0;
   bottom: 0;
   background-color: rgba(15, 23, 42, 0.2);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,36 +28,18 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
 
+/* Updated to fit the map completely */
 .modal-left-graphic-panel {
   flex: 1.1;
-  background-size: cover;
-  background-position: center;
   position: relative;
-  display: flex;
-  align-items: flex-end;
-  padding: 32px;
-  box-sizing: border-box;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
 }
 
-.graphic-gradient-scrim {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%);
-  z-index: 1;
-}
-
-.graphic-overlay-caption {
-  position: relative;
-  z-index: 2;
-  color: #ffffff;
-  font-size: 14px;
-  line-height: 1.6;
-  font-weight: 400;
-  margin: 0;
-  opacity: 0.95;
+.modal-left-graphic-panel .leaflet-container {
+  width: 100%;
+  height: 100%;
 }
 
 .modal-right-form-panel {

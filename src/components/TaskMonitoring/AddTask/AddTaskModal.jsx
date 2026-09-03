@@ -1,7 +1,35 @@
 import { useState, useRef, useEffect } from 'react';
 import './TaskModal.css';
-import taskGraphic from '../../../assets/taskImg.jpg';
 import { tasksApi, customersApi, usersApi, fullName } from '../../../api/services';
+
+// Leaflet Map Imports
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix default Leaflet marker icon path issues in React
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._defaulthide;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+// Dynamic camera pan and zoom when coordinates change
+function MapRecenter({ position }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      // Zoom level 16 zooms in close to the street/site level
+      map.flyTo(position, 18, { duration: 1.5 });
+    }
+  }, [position, map]);
+  return null;
+}
 
 export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
   const [taskName, setTaskName] = useState('');
@@ -22,25 +50,47 @@ export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
   const [customers, setCustomers] = useState([]);
   const [technicians, setTechnicians] = useState([]);
 
+  // Map state (Default coordinates for Accra)
+  const [mapPosition, setMapPosition] = useState([5.6037, -0.1870]);
+
   const companyRef = useRef(null);
   const locationRef = useRef(null);
   const techRef = useRef(null);
 
-  // Load real customers and technicians for the autocomplete fields
   useEffect(() => {
     if (!isOpen) return;
     customersApi.list().then(setCustomers).catch(() => setCustomers([]));
     usersApi.getTechnicians().then(setTechnicians).catch(() => setTechnicians([]));
   }, [isOpen]);
 
+  // Geocode location search text into coordinates using Nominatim API
+  useEffect(() => {
+    if (!locationSearch.trim()) return;
+
+    const delayDebounceFn = setTimeout(() => {
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationSearch)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lon = parseFloat(data[0].lon);
+            setMapPosition([lat, lon]);
+          }
+        })
+        .catch((err) => console.error("Web geocoding failed:", err));
+    }, 800);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [locationSearch]);
+
   const customerNames = customers.map((c) => c.name);
   const locationNames = [...new Set(customers.map((c) => c.location).filter(Boolean))];
 
-  const filteredCompanies = customerNames.filter(c =>
+  const filteredCompanies = customerNames.filter((c) =>
     c.toLowerCase().includes(companySearch.toLowerCase())
   );
 
-  const filteredLocations = locationNames.filter(l =>
+  const filteredLocations = locationNames.filter((l) =>
     l.toLowerCase().includes(locationSearch.toLowerCase())
   );
 
@@ -67,7 +117,6 @@ export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
     setSubmitting(true);
     setSubmitError('');
 
-    // Resolve the typed technician name to an id if it wasn't picked from the list
     let assignedTo = technicianId;
     if (!assignedTo && technician.trim()) {
       const match = suggestedTechnicians.find(
@@ -81,7 +130,12 @@ export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
         title: taskName,
         description,
         assignedTo: assignedTo || undefined,
-        location: locationSearch ? { address: locationSearch } : undefined,
+        location: locationSearch
+          ? {
+              address: locationSearch,
+              coordinates: [mapPosition[1], mapPosition[0]],
+            }
+          : undefined,
         priority: priority.toLowerCase(),
         companyName: companySearch,
         callerPhone,
@@ -89,7 +143,6 @@ export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
 
       if (onCreateTask) onCreateTask(created);
 
-      // Reset form for next use
       setTaskName(''); setDescription(''); setCompanySearch('');
       setLocationSearch(''); setCallerPhone(''); setPriority('Medium');
       setTechnician(''); setTechnicianId(null);
@@ -106,13 +159,28 @@ export default function AddTaskModal({ isOpen, onClose, onCreateTask }) {
     <div className="modal-blur-overlay">
       <div className="split-panel-modal-container">
 
-        <div className="modal-left-graphic-panel" style={{ backgroundImage: `url(${taskGraphic})` }}>
-          <div className="graphic-gradient-scrim"></div>
-          <p className="graphic-overlay-caption">
-            "Synchronizing the task dispatch queue ensures field technicians receive updated job tickets and navigation alerts safely without miscommunication points."
-          </p>
+        {/* LEFT PANEL: Edge-to-Edge Map Zoomed In */}
+        <div className="modal-left-graphic-panel">
+          <MapContainer
+            center={mapPosition}
+            zoom={16}
+            scrollWheelZoom={true}
+            style={{ width: '100%', height: '100%' }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <Marker position={mapPosition}>
+              <Popup>
+                {locationSearch || "Selected Location"}
+              </Popup>
+            </Marker>
+            <MapRecenter position={mapPosition} />
+          </MapContainer>
         </div>
 
+        {/* RIGHT PANEL: Form */}
         <div className="modal-right-form-panel">
           <header className="modal-panel-header">
             <h2>Create Field Operation</h2>
